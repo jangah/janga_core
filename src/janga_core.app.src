@@ -1,0 +1,17 @@
+{application, janga_core,
+ [
+  {description, ""},
+  {vsn, git},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  lager,
+                  gproc,
+                  mnesia,                  
+                  webmachine,
+                  ibrowse                                  
+                 ]},
+  {mod, { janga_core_app, []}},
+  {env, []}
+ ]}.
