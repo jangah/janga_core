@@ -73,7 +73,10 @@ copy_files([File|Files], Destination, JApp) ->
 	%%lager:info("file to copy : ~p", [File]),
 	case filelib:is_dir(File) of
 		true -> create_dir(File, Destination, JApp);
-		false -> copy_file(File, Destination, JApp)
+		false -> case is_config_file(File) of 
+					false -> copy_file(File, Destination, JApp);
+					true -> lager:info("we don't overwrite config file: ~p", [File])
+				 end
 	end,
 	copy_files(Files, Destination, JApp).
 
@@ -84,6 +87,9 @@ create_dir(Dir, Destination, JApp) ->
 copy_file(File, Destination, JApp) ->
 	%%lager:info("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
 	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
+
+is_config_file(File) ->
+	lists:member(filename:basename(File) , ["messages.config", "service.config"]). 
 
 extract_rest(File, JApp) ->
 	Start = string:str(File, JApp),
