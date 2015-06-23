@@ -94,7 +94,7 @@ all_files_from_dir(Dir) ->
 	filter(filelib:wildcard(Dir ++ "/**/*")).
 
 filter(Files) ->
-	[File||File <- Files, is_git_filter(File), is_ds_store_filter(File), is_eunit_filter(File), is_rebar_filter(File), is_deps_filter(File)].
+	[File||File <- Files, is_git_filter(File), is_ds_store_filter(File), is_eunit_filter(File), is_rebar_filter(File)].
 
 is_filter(File, Filter) ->
 	case string:str(File, Filter) of
@@ -113,11 +113,6 @@ is_eunit_filter(File) ->
 
 is_rebar_filter(File) ->
 	is_filter(File, ".rebar").
-
-is_deps_filter(File) ->
-	true.
-	%%is_filter(File, "deps").
-
 
 add_path(Destination) ->
 	true = code:add_pathz(filename:join(Destination, "ebin")). 
