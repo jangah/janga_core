@@ -88,9 +88,12 @@ copy_file(File, Destination, JApp) ->
 	%%lager:info("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
 	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
 
-is_config_file(File) ->
-	lists:member(filename:basename(File) , ["messages.config", "service.config"]). 
-
+s_config_file(File) ->
+	case lists:member(filename:basename(File) , ["messages.config", "service.config"]) of	
+		true -> filelib:is_file(File);
+		false -> false
+	end.
+	
 extract_rest(File, JApp) ->
 	Start = string:str(File, JApp),
 	Length = erlang:length(JApp),
