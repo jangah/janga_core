@@ -73,7 +73,7 @@ copy_files([File|Files], Destination, JApp) ->
 	%%lager:info("file to copy : ~p", [File]),
 	case filelib:is_dir(File) of
 		true -> create_dir(File, Destination, JApp);
-		false -> case is_config_file(File) of 
+		false -> case is_config_file(filename:join([Destination, extract_rest(File, JApp)])) of 
 					false -> copy_file(File, Destination, JApp);
 					true -> lager:info("we don't overwrite config file: ~p", [File])
 				 end
@@ -88,12 +88,12 @@ copy_file(File, Destination, JApp) ->
 	%%lager:info("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
 	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
 
-s_config_file(File) ->
+is_config_file(File) ->
 	case lists:member(filename:basename(File) , ["messages.config", "service.config"]) of	
 		true -> filelib:is_file(File);
 		false -> false
 	end.
-	
+
 extract_rest(File, JApp) ->
 	Start = string:str(File, JApp),
 	Length = erlang:length(JApp),
