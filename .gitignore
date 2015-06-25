@@ -17,6 +17,6 @@ deps/*/ebin
 deps/*
 backup/*
 variables-*
-Mnesia.e*
+Mnesia.*
 data
 doc/*

@@ -34,6 +34,7 @@
 
 start() ->
 	application:ensure_all_started(?MODULE),
+	start_mnesia(),
 	janga_app:autostart().
 
 stop() ->
@@ -44,6 +45,13 @@ stop() ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
+start_mnesia() ->
+    lager:info("create the schema for the database"),
+    mnesia:create_schema([node()]),
+    mnesia:start().
+
+stop_mnesia() ->
+    mnesia:stop().
 
 %% --------------------------------------------------------------------
 %%% Test functions
