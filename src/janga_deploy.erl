@@ -54,7 +54,9 @@ undeploy(JApp) ->
 update(JApp) ->
 	Destination = filename:join(filename:absname("japps") , JApp),
 	Source = filename:absname(filename:join(filename:absname("../japps"), JApp)),
-	copy_dir(Source, Destination, JApp),
+	copy_dir(Source, Destination, JApp),	
+	Filter = get_deps_config(Destination),
+	add_path_for_deps(Destination, Filter),
 	lager:info("japp : ~p is updated", [JApp]).
 
 %% --------------------------------------------------------------------
@@ -126,7 +128,7 @@ is_rebar_filter(File) ->
 add_path(Destination) ->
 	true = code:add_pathz(filename:join(Destination, "ebin")). 
 
-add_path_for_deps(Destination, Filter) ->
+add_path_for_deps(Destination, Filter) ->	
 	Files = filelib:wildcard(Destination ++ "/deps/*"),	
 	[add_path(File)||File <- Files, filelib:is_dir(File), is_to_add(filename:join([Destination,"deps",File]), Filter)].
 
