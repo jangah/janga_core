@@ -81,7 +81,7 @@ get_messages() ->
 	{node(),[{Name, gen_server:call(Pid, {get_allowed_messages})} || [{n,l, Name}, Pid,undefined] <- list_running()]}.
 
 deployed_japps() ->
-	[Dir ||Dir <- filelib:wildcard("japps" ++ "/*"), filelib:is_dir(Dir)].
+	[filename:basename(Dir) ||Dir <- filelib:wildcard("japps" ++ "/*"), filelib:is_dir(Dir)].
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
