@@ -259,7 +259,7 @@ handle_cast(_Msg, State) ->
 handle_info(timeout, State=#state{config = Config}) ->    
 	{driver, Driver, Module_config} = lists:keyfind(driver, 1, Config),
     Config_1 = ets_usage(janga_config:get_value(ets, Config, false), Config, Module_config),    
-    Config_2 = driver_init(Driver, janga_config:get_value(init, Module_config, false), Config_1),
+    Config_2 = driver_init(Driver, janga_config:get_value(init, Module_config, true), Config_1),
     true = gproc:reg({p, l, janga_config:get_value(type, Config)}, self()), 
 	start_timer(janga_config:get_value(timer, Config_2, 0)),
     {noreply, State#state{start_time=now(), config = Config_2}};
