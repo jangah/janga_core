@@ -17,7 +17,7 @@
 -export([get_module_config/1, set_module_config/2]).
 -export([get_value/2, get_value/3, get_values/2, get_level_values/3]).
 -export([set_value_data/3]).
--export([get_port/1, get_env/2]).
+-export([get_ports/0, get_port/1, get_env/2]).
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -65,6 +65,9 @@ get_value(Key, List_of_tuples, Default) when is_list(List_of_tuples)  ->
 get_port(Application) ->
   Ports = get_env(janga_core, ports),  
   proplists:get_value(list_to_atom(Application ++ "_port"), Ports).
+
+get_ports() ->
+  get_env(janga_core, ports).
 
 get_env(Application, Key) ->
   {ok, Value} = application:get_env(Application, Key),

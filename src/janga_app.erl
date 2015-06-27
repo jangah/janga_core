@@ -32,7 +32,7 @@
 %% --------------------------------------------------------------------
 -export([start/1, stop/1, autostart/0]).
 -export([deploy/1, undeploy/1, update/1]).
--export([list_running/0, get_configs/0, get_messages/0, deployed_japps/0]).
+-export([list_running/0, get_configs/0, get_messages/0, deployed_japps/0, ports/0]).
 
 start(JApp) when is_list(JApp)->
 	start(list_to_atom(JApp));
@@ -82,6 +82,9 @@ get_messages() ->
 
 deployed_japps() ->
 	[filename:basename(Dir) ||Dir <- filelib:wildcard("japps" ++ "/*"), filelib:is_dir(Dir)].
+
+ports() ->
+	janga_config:get_ports().
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
