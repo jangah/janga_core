@@ -62,9 +62,9 @@ get_value(Key, List_of_tuples) when is_list(List_of_tuples)  ->
 get_value(Key, List_of_tuples, Default) when is_list(List_of_tuples)  ->
     proplists:get_value(Key, List_of_tuples, Default).
 
-get_port(Application) ->
+get_port(JApp) ->
   Ports = get_env(janga_core, ports),  
-  proplists:get_value(list_to_atom(Application ++ "_port"), Ports).
+  proplists:get_value(list_to_atom(JApp ++ "_port"), Ports).
 
 get_ports() ->
   get_env(janga_core, ports).
@@ -77,10 +77,6 @@ get_env(Application, Key) ->
 %% --------------------------------------------------------------------
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
-
-get_port_test() ->
-  application:load(janga_core),
-  ?assertEqual("8000", get_port("funrunner")).
 
 get_level_test() ->
     List_of_tuples = [{key1, "V1"}, {key2, "v2"}, {key3, [{sub3_k1, "v31"}, {sub3_k2, "v32"}]}, {key4, "v4"}],

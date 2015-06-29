@@ -138,7 +138,7 @@ get_accounts() ->
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
 get_accounts_test() ->
-	application:start(),
+	application:start(janga_core),
 	?assertEqual([{"a", "a"}], get_accounts()).
 
 check_account_test()->

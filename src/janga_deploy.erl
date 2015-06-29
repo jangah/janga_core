@@ -139,7 +139,6 @@ is_to_add(File, Filter) ->
 	end.
 
 get_deps_config(Path_for_japp) ->
-	lager:info("path : ~p", [Path_for_japp]),
 	case file:consult(Path_for_japp ++ "/deploy.config") of
 		{ok, Deps} -> create_path_for_deps(Path_for_japp, Deps);
 		_ -> []
@@ -148,7 +147,7 @@ get_deps_config(Path_for_japp) ->
 create_path_for_deps(_Path_for_japp, []) ->
 	[];
 create_path_for_deps(Path_for_japp, Deps) ->
-	[filename:join([Path_for_japp,"deps" ,Dep])||Dep <- Deps].
+	[filename:join([Path_for_japp,"deps" ,Dep])||Dep <- lists:flatten(Deps)].
 
 delete_dir(JApp_dir) ->
 	Files = all_files_from_dir(JApp_dir), 

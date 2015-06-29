@@ -88,17 +88,8 @@ generate_messages(Counter, Value) ->
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
 
-send_message_test() ->
-	meck:new(rpc, [unstick]),
-	meck:expect(rpc, abcast, fun(['nonode@nohost'], 'janga_actor_group', "This is a test") -> abcast end),
-	?assertEqual(ok, send_message("This is a test")),
-	?assert(meck:validate(rpc)).
 
 create_message_test() ->
-    ?assertEqual([<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"1">>, <<"63540684780">>,[],"FALLING"], create_message('horst@notebook', "hc_sr501_sensor", "1", 63540684780, [], "FALLING")),
-    ?assertMatch([<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"default">>, A, [],"FALLING"], [<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"default">>, A,"FALLING"] = create_message('horst@notebook', 'hc_sr501_sensor',  "default", [],"FALLING")),
-    ?assertMatch([<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"1">>, A, [],"FALLING"], [<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"1">>, A,"FALLING"] = create_message('horst@notebook', 'hc_sr501_sensor', "1", [], "FALLING")),
-    ?assertMatch([<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"default">>, A, [],"FALLING"], [<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"default">>, A,"FALLING"] = create_message('horst@notebook', 'hc_sr501_sensor', "default" , [],"FALLING")).
-
+    ?assertEqual([<<"horst@notebook">>,<<"hc_sr501_sensor">>,<<"1">>, <<"63540684780">>,[],"FALLING"], create_message('horst@notebook', "hc_sr501_sensor", "1", 63540684780, [], "FALLING")).
 
 -endif.
