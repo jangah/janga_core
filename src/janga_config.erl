@@ -87,7 +87,6 @@ get_values_test() ->
     ?assertEqual(["v2", "v4"], get_values([key2, key4], List_of_tuples)).
     
 get_module_config_test() ->
-
     Config = 
      [{id, "0"},
       {activ, false},
