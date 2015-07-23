@@ -38,7 +38,7 @@ deploy(JApp) ->
 	Source = filename:absname(filename:join(filename:absname("../japps"), JApp)),
 	case file:make_dir(Destination) of
 		{error,eexist} -> lager:warning("the japp : ~p already exists.", [JApp]);
-		ok -> copy_dir(Source, Destination, JApp), 
+		ok -> copy_dir(Source, Destination, JApp, ["messages.config", "service.config"]), 
 			  add_path(Destination),
 			  Filter = get_deps_config(Destination),
 			  add_path_for_deps(Destination, Filter)
@@ -54,8 +54,10 @@ undeploy(JApp) ->
 update(JApp) ->
 	Destination = filename:join(filename:absname("japps") , JApp),
 	Source = filename:absname(filename:join(filename:absname("../japps"), JApp)),
-	copy_dir(Source, Destination, JApp),	
+	Configs = get_additional_configs(Destination),
+	copy_dir(Source, Destination, JApp, [Configs|["messages.config", "service.config"]]),	
 	Filter = get_deps_config(Destination),
+	Configs = get_additional_configs(Destination),
 	add_path_for_deps(Destination, Filter),
 	lager:info("japp : ~p is updated", [JApp]).
 
@@ -65,33 +67,36 @@ update(JApp) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-copy_dir(Source, Destination, JApp) ->
+copy_dir(Source, Destination, JApp, Filter) ->
 	Files = all_files_from_dir(Source),
-	copy_files(Files, Destination, JApp).
+	copy_files(Files, Destination, JApp, Filter).
 
-copy_files([], _Destination, _JApp) ->
+copy_files([], _Destination, _JApp, _Filter) ->
 	ok;
-copy_files([File|Files], Destination, JApp) ->
+copy_files([File|Files], Destination, JApp, Filter) ->
 	%%lager:info("file to copy : ~p", [File]),
 	case filelib:is_dir(File) of
 		true -> create_dir(File, Destination, JApp);
-		false -> case is_config_file(filename:join([Destination, extract_rest(File, JApp)])) of 
-					false -> copy_file(File, Destination, JApp);
+		false -> case is_config_file(filename:join([Destination, extract_rest(File, JApp)]), Filter) of 
+					false -> copy_file(File, Destination, JApp, Filter);
 					true -> lager:info("we don't overwrite config file: ~p", [File])
 				 end
 	end,
-	copy_files(Files, Destination, JApp).
+	copy_files(Files, Destination, JApp, Filter).
 
 create_dir(Dir, Destination, JApp) ->
 	%%lager:info("make dir : ~p", [filename:join([Destination, extract_rest(Dir, JApp)])]),
 	file:make_dir(filename:join([Destination, extract_rest(Dir, JApp)])).
 
-copy_file(File, Destination, JApp) ->
-	%%lager:info("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
+copy_file(File, Destination, JApp, Filter) ->
+	lager:info("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
+	lager:info("Filter : ~p", [Filter]),
 	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
 
-is_config_file(File) ->
-	case lists:member(filename:basename(File) , ["messages.config", "service.config"]) of	
+
+
+is_config_file(File, Filter) ->
+	case lists:member(filename:basename(File) , Filter) of	
 		true -> filelib:is_file(File);
 		false -> false
 	end.
@@ -139,15 +144,26 @@ is_to_add(File, Filter) ->
 	end.
 
 get_deps_config(Path_for_japp) ->
-	case file:consult(Path_for_japp ++ "/deploy.config") of
+	case file:consult(filename:join([Path_for_japp, "deploy.config"])) of
 		{ok, Deps} -> create_path_for_deps(Path_for_japp, Deps);
 		_ -> []
 	end.
 
+get_additional_configs(Path_for_config) ->
+	case file:consult(filename:join([Path_for_config, "additional.config"])) of
+		{ok, Configs} -> Configs;
+		_ -> []
+	end.
+
+create_path_for_config(_Path_for_japp, []) ->
+	[];
+create_path_for_config(Path_for_japp, [Configs]) ->
+	[filename:join([Path_for_japp, Config]) || Config <- Configs].
+
 create_path_for_deps(_Path_for_japp, []) ->
 	[];
 create_path_for_deps(Path_for_japp, Deps) ->
-	[filename:join([Path_for_japp,"deps" ,Dep])||Dep <- lists:flatten(Deps)].
+	[filename:join([Path_for_japp, "deps", Dep])||Dep <- lists:flatten(Deps)].
 
 delete_dir(JApp_dir) ->
 	Files = all_files_from_dir(JApp_dir), 
@@ -173,6 +189,15 @@ delete_dirs([Dir|Dirs]) ->
 %% --------------------------------------------------------------------
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
-all_files_from_dir_test() ->
-	all_files_from_dir(".").
+get_additional_configs_test() ->
+	{ok, CWD} = file:get_cwd(),
+	Result = [filename:join([CWD, "test/conf_2", "projects/projects.config"]), filename:join([CWD, "test/conf_2", "projects/projects.config"])],
+	?assertEqual([], get_additional_configs(filename:join([CWD, "test", "conf_1"]))),
+	?assertEqual(Result, get_additional_configs(filename:join([CWD, "test", "conf_2"]))).
+
+get_deps_config_test() ->
+	{ok, CWD} = file:get_cwd(),
+
+	?assertEqual([], get_deps_config(filename:join([CWD, "test", "conf_1"]))),
+	?assertEqual([filename:join([CWD, "test/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "test", "conf_2"]))).
 -endif.
