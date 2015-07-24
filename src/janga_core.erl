@@ -49,7 +49,7 @@ start_mnesia() ->
 	stopped = mnesia:stop(),
     lager:info("create the schema for the database"),
     ok = mnesia:create_schema([node()]),
-    ok = mnesia:start().
+    mnesia:start().
 
 stop_mnesia() ->
     mnesia:stop().
