@@ -298,7 +298,7 @@ handle_info({'ETS-TRANSFER', TableId, Pid, _Data}, State=#state{config = Config}
  
 handle_info({send_after, Name, Optional, Body}, State=#state{timed_msgs = Timed_msgs}) ->
     lager:info("now we send the message from : ~p with body : ~p ", [Name, Body]),
-    sensor:send([], Name, Optional, Body),
+    janga_message:send([], Name, Optional, Body),
     {noreply, State#state{timed_msgs = dict:erase({self(), Name}, Timed_msgs)}};
     
 handle_info({Port, Payload}, State=#state{config = Config}) when is_port(Port) ->
