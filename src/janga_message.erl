@@ -69,7 +69,7 @@ send_message(Nodes, Target, Message) ->
 	ok.
 
 send_after(Pid, Name, Time, Optional, Body) ->
-	core_service:send_time_based(Time, Pid, Name, Optional, Body).    
+	janga_core_service:send_time_based(Time, Pid, Name, Optional, Body).    
 %%
 %% doc generates messages and send them. !!! only for testing !!!
 %%
