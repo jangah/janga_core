@@ -44,14 +44,6 @@ stop() ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-start_mnesia() ->
-	stopped = mnesia:stop(),
-    lager:info("create the schema for the database"),
-    ok = mnesia:create_schema([node()]),
-    mnesia:start().
-
-stop_mnesia() ->
-    mnesia:stop().
 
 %% --------------------------------------------------------------------
 %%% Test functions
