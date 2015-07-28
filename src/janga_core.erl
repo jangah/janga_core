@@ -34,7 +34,6 @@
 
 start() ->
 	application:ensure_all_started(?MODULE),
-	start_mnesia(),
 	janga_app:autostart().
 
 stop() ->

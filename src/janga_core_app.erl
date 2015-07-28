@@ -13,6 +13,7 @@ start(_StartType, _StartArgs) ->
     janga_core_sup:start_link().    
 
 stop(_State) ->
+	mnesia:stop(),    
     ok.
 
 start_mnesia() ->
