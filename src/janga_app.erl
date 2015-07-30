@@ -95,7 +95,7 @@ version(Japp) ->
 	end.
 
 check_version(Japp) when is_atom(Japp) ->
-	Path = "../japps",
+	Path = janga_config:get_env(janga_core, repo_dir),
 	case version(Japp) of
 		{false, Reason} -> {false, Reason};
 		V1 -> {ok, [{_A, _B, L}]} = file:consult(filename:join([Path, atom_to_list(Japp), "ebin", atom_to_list(Japp) ++ ".app"])),

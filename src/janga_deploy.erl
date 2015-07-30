@@ -34,8 +34,9 @@
 -export([add_path_for_deps/2, download/1]).
 
 deploy(JApp) ->
+	Repo = janga_config:get_env(janga_core, repo_dir),
 	Destination = filename:join(filename:absname("japps") , JApp),
-	Source = filename:absname(filename:join(filename:absname("../japps"), JApp)),
+	Source = filename:absname(filename:join(filename:absname(Repo), JApp)),
 	case file:make_dir(Destination) of
 		{error,eexist} -> lager:warning("the japp : ~p already exists.", [JApp]);
 		ok -> copy_dir(Source, Destination, JApp, ["messages.config", "service.config"]), 
@@ -52,8 +53,9 @@ undeploy(JApp) ->
 	lager:info("japp : ~p is undeployed.", [JApp]).
 
 update(JApp) ->
+	Repo = janga_config:get_env(janga_core, repo_dir),
 	Destination = filename:join(filename:absname("japps") , JApp),
-	Source = filename:absname(filename:join(filename:absname("../japps"), JApp)),
+	Source = filename:absname(filename:join(filename:absname(Repo), JApp)),
 	Configs = get_additional_configs(Destination),
 	copy_dir(Source, Destination, JApp, [Configs|["messages.config", "service.config"]]),	
 	Filter = get_deps_config(Destination),
