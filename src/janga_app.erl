@@ -33,7 +33,7 @@
 -export([start/1, stop/1, autostart/0]).
 -export([deploy/1, undeploy/1, update/1]).
 -export([list_running/0, get_configs/0, get_messages/0, deployed_japps/0, ports/0]).
--export([version/1]).
+-export([version/1, check_version/1]).
 
 start(JApp) when is_list(JApp)->
 	start(list_to_atom(JApp));
@@ -87,11 +87,24 @@ deployed_japps() ->
 ports() ->
 	janga_config:get_ports().
 
-version(Japp) when is_atom(Japp)->
-	application:load(Japp),
-	{ok, Version} = application:get_key(Japp, vsn),
-	application:unload(Japp),
-	Version.
+version(Japp) ->
+	L = application:loaded_applications(),	
+	case lists:keysearch(Japp, 1, L) of
+		false -> {false, "japp is not running."};
+		{value,{Japp,[],Version}} -> Version
+	end.
+
+check_version(Japp) when is_atom(Japp) ->
+	Path = "../japps",
+	case version(Japp) of
+		{false, Reason} -> {false, Reason};
+		V1 -> {ok, [{_A, _B, L}]} = file:consult(filename:join([Path, atom_to_list(Japp), "ebin", atom_to_list(Japp) ++ ".app"])),
+			  V2 = proplists:get_value(vsn, L),
+			  case V1 =:= V2 of
+			  	true -> {true, "versions are the same"};
+			  	false -> {false, "versions are different, please update."}
+			  end
+	end.
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------

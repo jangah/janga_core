@@ -31,7 +31,7 @@
 %% External exports
 %% --------------------------------------------------------------------
 -export([deploy/1, undeploy/1, update/1]).
--export([add_path_for_deps/2]).
+-export([add_path_for_deps/2, download/1]).
 
 deploy(JApp) ->
 	Destination = filename:join(filename:absname("japps") , JApp),
@@ -60,6 +60,11 @@ update(JApp) ->
 	Configs = get_additional_configs(Destination),
 	add_path_for_deps(Destination, Filter),
 	lager:info("japp : ~p is updated", [JApp]).
+
+download(JApp) ->
+	{ok, "200", _List, {file, Name}} = ibrowse:send_req("http://localhost:9010/jappsrepo/" ++ JApp, [], get, [], [{content-disposition, "attachment; filename='test.zip'"},{save_response_to_file, true}]),
+	%%httpc:request(get, {"http://localhost:9010/jappsrepo/opm", []}, [], [{stream, "test.zip"}]).
+	file:rename(Name, filename:join(["/tmp", JApp])). 
 
 %% --------------------------------------------------------------------
 %% record definitions
