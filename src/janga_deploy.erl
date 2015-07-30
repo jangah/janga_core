@@ -64,10 +64,10 @@ update(JApp) ->
 	lager:info("japp : ~p is updated", [JApp]).
 
 download(JApp) ->
-	{ok, "200", _List, {file, Name}} = ibrowse:send_req("http://localhost:9010/jappsrepo/" ++ JApp, [], get, [], [{content-disposition, "attachment; filename='test.zip'"},{save_response_to_file, true}]),
-	%%httpc:request(get, {"http://localhost:9010/jappsrepo/opm", []}, [], [{stream, "test.zip"}]).
-	file:rename(Name, filename:join(["/tmp", JApp])). 
-
+	{ok, "200", Header, {file, Name}} = ibrowse:send_req("http://localhost:9010/jappsrepo/" ++ atom_to_list(JApp), [], get, [], [{save_response_to_file, true}]),
+	Content_Disposition = proplists:get_value("Content-Disposition", Header),
+	FileName = lists:nth(2,string:tokens(lists:nth(2,string:tokens(Content_Disposition, ";")),"=")),
+	file:rename(Name, filename:join(["/tmp", FileName])). 
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
