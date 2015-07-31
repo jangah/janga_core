@@ -64,7 +64,7 @@ update(JApp) ->
 	lager:info("japp : ~p is updated", [JApp]).
 
 download(JApp) ->
-	{ok, "200", Header, {file, Name}} = ibrowse:send_req("http://localhost:9010/jappsrepo/" ++ atom_to_list(JApp), [], get, [], [{save_response_to_file, true}]),
+	{ok, "200", Header, {file, Name}} = ibrowse:send_req(janga_config:get_env(janga_core, repo_uri) ++ atom_to_list(JApp), [], get, [], [{save_response_to_file, true}]),
 	Content_Disposition = proplists:get_value("Content-Disposition", Header),
 	FileName = lists:nth(2,string:tokens(lists:nth(2,string:tokens(Content_Disposition, ";")),"=")),
 	file:rename(Name, filename:join(["/tmp", FileName])). 
