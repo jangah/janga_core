@@ -30,10 +30,11 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([start/1, stop/1, autostart/0]).
+-export([start/1, stop/1, restart/1, autostart/0]).
 -export([deploy/1, undeploy/1, update/1]).
 -export([list_running/0, get_configs/0, get_messages/0, deployed_japps/0, ports/0]).
 -export([version/1, check_version/1]).
+-export([download/1, install/2]).
 
 start(JApp) when is_list(JApp)->
 	start(list_to_atom(JApp));
@@ -49,6 +50,10 @@ stop(JApp)  when is_list(JApp)->
 stop(JApp) ->
 	application:stop(JApp),
 	application:unload(JApp).
+
+restart(JApp) ->
+	stop(JApp),
+	start(JApp).
 
 autostart() ->
 	{ok, Japps} = application:get_env(janga_core, autostart),	
@@ -69,6 +74,12 @@ undeploy(JApp) when is_atom(JApp) ->
 undeploy(JApp) ->
 	janga_deploy:undeploy(JApp).  
 
+download(JApp) ->
+	janga_deploy:download(JApp). 
+
+install(JApp, ZipFile) ->
+	janga_deploy:install(JApp, ZipFile).
+	 
 list_running() ->
 	MatchHead = '_',
     Guard = [],

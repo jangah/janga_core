@@ -24,6 +24,8 @@
 %%% -------------------------------------------------------------------
 -module(janga_deploy).
 
+-define(TMPDIR, "/tmp").
+-define(ZIPDIR, "zips").
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
@@ -31,7 +33,7 @@
 %% External exports
 %% --------------------------------------------------------------------
 -export([deploy/1, undeploy/1, update/1]).
--export([add_path_for_deps/2, download/1]).
+-export([add_path_for_deps/2, download/1, install/2]).
 
 deploy(JApp) ->
 	Repo = janga_config:get_env(janga_core, repo_dir),
@@ -67,7 +69,8 @@ download(JApp) ->
 	{ok, "200", Header, {file, Name}} = ibrowse:send_req(janga_config:get_env(janga_core, repo_uri) ++ atom_to_list(JApp), [], get, [], [{save_response_to_file, true}]),
 	Content_Disposition = proplists:get_value("Content-Disposition", Header),
 	FileName = lists:nth(2,string:tokens(lists:nth(2,string:tokens(Content_Disposition, ";")),"=")),
-	file:rename(Name, filename:join(["/tmp", FileName])). 
+	file:rename(Name, filename:join(["/tmp", FileName])),
+	{ok, FileName}.
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -191,6 +194,38 @@ delete_dirs([]) ->
 delete_dirs([Dir|Dirs]) ->
 	file:del_dir(Dir),
 	delete_dirs(Dirs). 
+
+install(JApp, ZipFile) ->
+	lager:info("starting installing : ~p", [JApp]),
+	Repo_path = janga_config:get_env(janga_core, repo_dir),
+	ZipFile = backup(atom_to_list(JApp)),
+	lager:info("backup : ~p", [ZipFile]),
+	delete_dir(filename:join([Repo_path, JApp])),
+	extract_zip_to_repo(ZipFile, ?TMPDIR, Repo_path),
+	lager:info("finished installing : ~p", [JApp]),
+	ok.
+
+extract_zip_to_repo(ZipFile, Tmp_path, Repo_path) ->
+	zip:unzip(filename:join([Tmp_path, ZipFile]) , [{cwd, Repo_path}]).
+
+backup(JApp) ->
+	Repo_path = janga_config:get_env(janga_core, repo_dir),
+	ZipFileName = create_zip_name(JApp, Repo_path),
+	ZipFile = create_zip(filename:join([Repo_path, ?ZIPDIR, ZipFileName]), JApp, Repo_path),
+	ZipFile.
+
+%%TODO: move it in a central place and use it also from jappsrepo
+create_zip(File, Japp, Repo_path) when is_list(File) ->	
+	Files = filelib:wildcard(Japp ++ "/**", Repo_path),
+	{ok, ZipFile} = zip:zip(File, Files, [{cwd, Repo_path}]),
+	ZipFile.
+
+version(Japp, Path) ->
+	{ok, [{_A, _B, L}]} = file:consult(filename:join([Path, Japp, "ebin", Japp ++ ".app"])),
+	proplists:get_value(vsn, L).
+
+create_zip_name(Japp, Path) ->
+	Japp ++ "-" ++ version(Japp, Path) ++ ".zip".
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
@@ -207,4 +242,7 @@ get_deps_config_test() ->
 
 	?assertEqual([], get_deps_config(filename:join([CWD, "test", "conf_1"]))),
 	?assertEqual([filename:join([CWD, "test/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "test", "conf_2"]))).
+
+backup_test() ->
+	backup(opm).
 -endif.
