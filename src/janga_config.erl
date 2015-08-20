@@ -52,7 +52,7 @@ get_values([Key|Keys], List_of_tuples, Acc) when is_list(List_of_tuples) ->
 get_value(Key, List_of_tuples) when is_list(List_of_tuples)  ->
     get_value(proplists:lookup(Key, List_of_tuples)).
 get_value(Key, List_of_tuples, Default) when is_list(List_of_tuples)  ->
-    get_value(proplists:lookup(Key, List_of_tuples, Default)).
+    get_value(proplists:lookup(Key, List_of_tuples)).
 
 get_value({K, V1, V2}) ->
   V2.
