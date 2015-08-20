@@ -55,7 +55,7 @@ get_value(Key, List_of_tuples, Default) when is_list(List_of_tuples)  ->
     get_value(proplists:lookup(Key, List_of_tuples)).
 
 get_value({K, V1, V2}) ->
-  V2.
+  V2;
 get_value({K, V}) ->
   V;
 get_value(none) ->
