@@ -62,7 +62,7 @@ get_value({K, V1, V2}) ->
 get_value({K, V}) ->
   V;
 get_value(none) ->
-  [].
+  none.
 
 get_port(JApp) ->
   Ports = get_env(janga_core, ports),  
@@ -85,6 +85,10 @@ get_value_test() ->
     List_of_tuples = [{key1, "V1"}, {key2, "v2"}, {key3, [{sub3_k1, "v31"}, {sub3_k2, "v32"}]}, {key4, "v4"}],
     ?assertEqual([{sub3_k1,"v31"},{sub3_k2,"v32"}], get_value(key3, List_of_tuples)).
 
+get_value_default_test() ->
+    List_of_tuples = [{key1, "V1"}, {key2, "v2"}, {key3, [{sub3_k1, "v31"}, {sub3_k2, "v32"}]}, {key4, "v4"}],
+    ?assertEqual(true, get_value(unknown, List_of_tuples, true)).
+
 get_level_test() ->
     List_of_tuples = [{key1, "V1"}, {key2, "v2"}, {key3, [{sub3_k1, "v31"}, {sub3_k2, "v32"}]}, {key4, "v4"}],
     ?assertEqual([{sub3_k1, "v31"}, {sub3_k2, "v32"}], get_level([key3], List_of_tuples)).  
@@ -96,7 +100,7 @@ get_level_values_test() ->
 get_values_test() ->
     List_of_tuples = [{key1, "V1"}, {key2, "v2"}, {key3, "v3"}, {key4, "v4"}],
     ?assertEqual(["v2", "v4"], get_values([key2, key4], List_of_tuples)).
-    
+
 get_module_config_test() ->
 
     Config = 
