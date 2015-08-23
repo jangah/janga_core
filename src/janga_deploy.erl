@@ -99,8 +99,8 @@ create_dir(Dir, Destination, JApp) ->
 	file:make_dir(filename:join([Destination, extract_rest(Dir, JApp)])).
 
 copy_file(File, Destination, JApp, Filter) ->
-	lager:info("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
-	lager:info("Filter : ~p", [Filter]),
+	lager:debug("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
+	lager:debug("Filter : ~p", [Filter]),
 	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
 
 
