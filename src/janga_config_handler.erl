@@ -17,7 +17,7 @@
 %% --------------------------------------------------------------------
 -export([get_config/1, get_config/2]).
 -export([get_id/1, get_name/2, get_service_name/1]).
--export([write_config/3]).
+-export([write_config/3, set_active/2]).
 
 
 get_config(Application) ->
@@ -33,10 +33,23 @@ get_messages_for_module(Messages, Id) ->
 	end. 
 
 get_config(Application, Config_file) ->
-	case file:consult(filename:join([code:priv_dir(Application),"config", Config_file])) of
+	lager:info("... ~p", [Application]),
+	case file:consult(filename:join([code:priv_dir(Application), "config", Config_file])) of
 		{ok, [Config]} -> Config;
 		{error, Reason} -> {error, Reason}
 	end. 
+
+set_active_([{service, Name, Config}], Status) ->
+	[{service, Name, lists:keyreplace(activ, 1, Config, {activ, Status})}].
+
+set_active(Application, Status) ->
+	Config = get_config(Application, ?SERVICE_CONFIG),
+	set_active(Application, Config, Status).
+
+set_active(Application, Config, Status) when is_list(Config) ->
+	Config_1 = set_active_(Config, Status),	
+	write_config(Application, ?SERVICE_CONFIG, Config_1),
+	Config_1.
 
 write_config(Application, Config_file, Data) ->
 	ok = file:write_file(filename:join([code:priv_dir(Application), "config", Config_file]), io_lib:fwrite("~p.\n", [Data])).
@@ -78,6 +91,9 @@ is_type(Type, Type_1) ->
 is_type_test() ->
 	?assertEqual(true, is_type("a", "a")),
 	?assertEqual(false, is_type("a", "b")).	
+
+set_active_test() ->
+	set_active(janga_core, true).
 
 write_config_test() ->
 	Data = [{service, "Switches office",
