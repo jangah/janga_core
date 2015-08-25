@@ -66,7 +66,7 @@ get_value(none) ->
 
 get_port(JApp) ->
   Ports = get_env(janga_core, ports),  
-  proplists:get_value(list_to_atom(JApp ++ "_port"), Ports).
+  proplists:get_value(JApp, Ports).
 
 get_ports() ->
   get_env(janga_core, ports).
