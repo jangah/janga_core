@@ -32,8 +32,7 @@ get_messages_for_module(Messages, Id) ->
 		{_M, MSGs} -> sets:from_list(MSGs)
 	end. 
 
-get_config(Application, Config_file) ->
-	lager:info("... ~p", [Application]),
+get_config(Application, Config_file) ->	
 	case file:consult(filename:join([code:priv_dir(Application), "config", Config_file])) of
 		{ok, [Config]} -> Config;
 		{error, Reason} -> {error, Reason}
