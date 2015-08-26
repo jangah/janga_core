@@ -18,7 +18,7 @@
 -export([get_module_config/1, set_module_config/2]).
 -export([get_value/2, get_value/3, get_values/2, get_level_values/3]).
 -export([get_ports/0, get_port/1, get_env/2]).
--export([get_service_config/1]).
+-export([get_service_config/1, get_name/1]).
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -77,9 +77,12 @@ get_env(Application, Key) ->
   {ok, Value} = application:get_env(Application, Key),
   Value.
 
+get_name(Application) ->
+  get_value(name, get_service_config(Application)).
+
 get_service_config(Application) ->
   [{service, Name, Config}] = janga_config_handler:get_config(Application, ?SERVICE_CONFIG),
-  {Name, Config}.
+  [{name, Name}| Config].
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
