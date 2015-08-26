@@ -21,8 +21,8 @@
 
 
 get_config(Application) ->
-	[{service, Service, Config}] = get_config(Application, "service.config"),
-	Msgs = get_config(Application, "messages.config"),
+	[{service, Service, Config}] = get_config(Application, ?SERVICE_CONFIG),
+	Msgs = get_config(Application, ?MESSAGES_CONFIG),
 	Messages = get_messages_for_module(Msgs, get_id(Config)),
 	{[{name, Service}|Config], Messages}.
 
