@@ -151,40 +151,40 @@ init([_Service, Config, Messages]) ->
 handle_call({get_value}, _From, State=#state{value = Value}) ->
     {reply, Value, State};
 handle_call({get_name}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(name, Config) , State};
+    {reply, janga_config:get_value(name, Config) , State};
 handle_call({get_start_time}, _From, State=#state{start_time = Start_time}) ->
     {reply, Start_time, State};
 handle_call({get_type}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(type, Config, undefined) , State};
+    {reply, janga_config:get_value(type, Config, undefined) , State};
 handle_call({get_driver}, _From, State=#state{config = Config}) ->
 	{driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
     {reply, {Module, Module_config} , State};
 handle_call({get_icon}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(icon, Config, "service.png") , State};
+    {reply, janga_config:get_value(icon, Config, "service.png") , State};
 handle_call({get_config}, _From, State=#state{config = Config}) ->
     {reply, Config, State};
 handle_call({is_activ}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(activ, Config) , State};
+    {reply, janga_config:get_value(activ, Config) , State};
 handle_call({get_timer}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(timer, Config, 0) , State};
+    {reply, janga_config:get_value(timer, Config, 0) , State};
 handle_call({get_database}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(database, Config) , State};
+    {reply, janga_config:get_value(database, Config) , State};
 handle_call({get_description}, _From, State=#state{config = Config}) ->
-    {reply, proplists:get_value(description, Config) , State};
+    {reply, janga_config:get_value(description, Config) , State};
 handle_call({get_state}, _From, State) ->
     {reply, State, State};
 handle_call({set_state, New_state}, _From, State) ->
     {reply, State, New_state};
 
 handle_call({get_module_config}, _From, State=#state{config = Config}) ->
-    case proplists:get_value(ets, Config, false) of 
+    case janga_config:get_value(ets, Config, false) of 
         true -> Table_Id = proplists:get_value(table_id, Config),
                 {reply, ets:tab2list(Table_Id) , State};
         false -> {driver, {_Module, _Func}, Module_config} = lists:keyfind(driver, 1, Config),
                  {reply, Module_config, State}
     end;
 handle_call({get_model}, _From, State=#state{config = Config}) ->    
-    Reply = case proplists:get_value(model_fun, Config, []) of
+    Reply = case janga_config:get_value(model_fun, Config, []) of
         [] -> [];
         {Model, Function} -> F=list_to_atom(Function), 
                              Fun = fun Model:F/0,
@@ -208,11 +208,11 @@ save_data_to_ets(Config, Value) ->
     save_data_to_ets(Config, data, Value).
 
 save_data_to_ets(Config, Key, Value) ->
-  Table_Id = proplists:get_value(?TABLE, Config),
+  Table_Id = janga_config:get_value(?TABLE, Config),
   ets:insert(Table_Id, [{Key, Value}]).
 
 get_table_id(Config) ->
-    proplists:get_value(?TABLE, Config).
+    janga_config:get_value(?TABLE, Config).
 %% --------------------------------------------------------------------
 %% Function: handle_cast/2
 %% Description: Handling cast messages
@@ -236,11 +236,11 @@ handle_cast({send_time_based, Pid, Name, Time, Optional, Payload}, State=#state{
     New_Timer_ref = erlang:send_after(Time, Pid, {send_after, Name, Optional, Payload}),
     {noreply, State#state{timed_msgs = dict:store({Pid, Name}, New_Timer_ref, Time_msgs)}};
 handle_cast({set_value, Value}, State=#state{config = Config}) ->
-    Name = proplists:get_value(name, Config),
-    notify(janga_service_event:exists(), Name, now(), Value),
+    Name = janga_config:get_value(name, Config),
+    notify(janga_service_event:exists(), Name, Value),
     {noreply, State#state{value=Value}};
 handle_cast({stop}, State=#state{config = Config}) ->
-    Name = proplists:get_value(name, Config), 
+    Name = janga_config:get_value(name, Config), 
     lager:info("stopping service : ~p ", [Name]),
      {stop, normal, State}; 
 handle_cast({send_message, Message}, State=#state{config = Config}) ->
@@ -343,12 +343,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-notify(true, _Name, _Date, []) ->
+notify(true, _Name, []) ->
     %%lager:info(".... ~p", [Name]),
     false;
-notify(true, Name, Date, Value) ->
-    janga_service_event:notify({Name, Date, Value});
-notify(false, _Name, _Date, _Value) ->
+notify(true, Name, Value) ->
+    janga_service_event:notify({Name, Value});
+notify(false, _Name, _Value) ->
     false.
 
 is_message_well_known({Node, Sensor, Id}, Allowed_msgs) ->    
