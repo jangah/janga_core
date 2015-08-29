@@ -42,9 +42,9 @@ add_handler(Node) ->
 
 %% @doc Sends a notification to all handlers
 -spec notify(term()) -> ok.
-notify({Service, Date, Value}) ->
-   %% lager:info("notify : ~p ~p ~p", [Thing, Date, Value]),
-    gen_event:notify({global,?NAME()}, {Service, Date, Value}).
+notify({Service, Value}) ->
+    %%lager:info("notify : ~p ~p", [Service, Value]),
+    gen_event:notify({global,?NAME()}, {Service, Value}).
 
 %% @private
 %% @doc Whenever a new event handler is added to an event manager,
