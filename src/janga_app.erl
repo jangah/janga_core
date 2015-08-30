@@ -40,20 +40,23 @@ start(JApp) when is_list(JApp)->
 	start(list_to_atom(JApp));
 start(JApp) ->
 	 case application:start(JApp) of
-	 	ok -> lager:info("~p is started.", [JApp]);
+	 	ok -> janga_message:send([], system, [{start, finished}, {japp, JApp}]),  
+	 		 lager:info("~p is started.", [JApp]);
 	 	{error, Reason} -> lager:error("~p", [Reason]),
 	 					   lager:error("Maybe ~p is not deployed. You have to deploy it first.", [JApp])
 	 end.
 
 stop(JApp)  when is_list(JApp)->
 	stop(list_to_atom(JApp));
-stop(JApp) ->
+stop(JApp) ->	
 	application:stop(JApp),
-	application:unload(JApp).
+	application:unload(JApp),
+	janga_message:send([], system, [{stop, finished}, {japp, JApp}]).
 
 restart(JApp) ->
 	stop(JApp),
-	start(JApp).
+	start(JApp),
+	janga_message:send([], system, [{restart, finished}, {japp, JApp}]).
 
 autostart() ->
 	{ok, Japps} = application:get_env(janga_core, autostart),	

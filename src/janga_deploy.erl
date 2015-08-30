@@ -36,6 +36,7 @@
 -export([add_path_for_deps/2, download/1, install/2]).
 
 deploy(JApp) ->
+	janga_message:send([], system, [{deploy, start}, {japp, JApp}]), 
 	Repo = janga_config:get_env(janga_core, repo_dir),
 	Destination = filename:join(filename:absname("japps") , JApp),
 	Source = filename:absname(filename:join(filename:absname(Repo), JApp)),
@@ -46,15 +47,19 @@ deploy(JApp) ->
 			  Filter = get_deps_config(Destination),
 			  add_path_for_deps(Destination, Filter)
 	end,
+	janga_message:send([], system, [{deploy, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is deployed. Now you can start it.", [JApp]).
 
 undeploy(JApp) ->
+	janga_message:send([], system, [{undeploy, start}, {japp, JApp}]), 
 	janga_app:stop(JApp),
 	JApp_dir = filename:join(filename:absname("japps") , JApp),
 	delete_dir(JApp_dir),	
+	janga_message:send([], system, [{undeploy, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is undeployed.", [JApp]).
 
 update(JApp) ->
+	janga_message:send([], system, [{update, start}, {japp, JApp}]), 
 	Repo = janga_config:get_env(janga_core, repo_dir),
 	Destination = filename:join(filename:absname("japps") , JApp),
 	Source = filename:absname(filename:join(filename:absname(Repo), JApp)),
@@ -63,6 +68,7 @@ update(JApp) ->
 	Filter = get_deps_config(Destination),
 	Configs = get_additional_configs(Destination),
 	add_path_for_deps(Destination, Filter),
+	janga_message:send([], system, [{update, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is updated", [JApp]).
 
 download(JApp) ->
