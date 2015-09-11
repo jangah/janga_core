@@ -10,6 +10,7 @@
 %% ===================================================================
 start(_StartType, _StartArgs) ->
 	start_mnesia(),
+	janga_db:init(),
     janga_core_sup:start_link().    
 
 stop(_State) ->

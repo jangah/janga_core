@@ -9,7 +9,8 @@
                   lager,
                   gproc,                                  
                   webmachine,
-                  ibrowse                                  
+                  ibrowse,
+                  fnotify                                  
                  ]},
   {mod, { janga_core_app, []}},
   {env, []}
