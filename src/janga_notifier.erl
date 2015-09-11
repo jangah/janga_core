@@ -22,7 +22,7 @@
 %%%
 %%% Created : 
 %%% -------------------------------------------------------------------
--module(janga_logfile).
+-module(janga_notifier).
 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------
@@ -43,7 +43,7 @@
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
--record(state, {logfile = [], file = []}).
+-record(state, {}).
 %% ====================================================================
 %% Server functions
 %% ====================================================================
@@ -62,9 +62,7 @@ start_link() ->
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
 init([]) ->
-	Logfile = janga_config:get_logfile(),
-    fnotify:watch(Logfile, [modify]), 
-    {ok, #state{logfile = Logfile}}.
+    {ok, #state{}, 0}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -97,9 +95,14 @@ handle_cast(Msg, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-
-handle_info({fevent, Wd, Flags, Path, Name}, State) ->
+handle_info({fevent, Wd, Flags, Path, Name} = Msg, State) ->
     io:format("~p ~p ~p ~p", [Wd, Flags, Path, Name]),
+    janga_message:send([], ?MODULE, Msg), 
+    {noreply, State};
+
+handle_info(timeout, State) ->
+    Config = janga_config:get_notify(),
+    [fnotify:watch(Path, Flags)||{Path, Flags} <- Config],    
     {noreply, State};
 
 handle_info(Info, State) ->

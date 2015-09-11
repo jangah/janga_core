@@ -30,7 +30,7 @@ init([]) ->
     	?CHILD(actor_group, worker),
     	?CHILD(janga_account_sup, supervisor),
     	?CHILD_ARG_1(janga_service_event, worker, "service_event_manager"),
-        ?CHILD(janga_logfile, worker)
+        ?CHILD(janga_notifier, worker)
     	]
     	}}.
 
