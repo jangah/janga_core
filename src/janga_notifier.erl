@@ -43,7 +43,7 @@
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
--record(state, {}).
+-record(state, {watches=#{}}).
 %% ====================================================================
 %% Server functions
 %% ====================================================================
@@ -62,7 +62,7 @@ start_link() ->
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
 init([]) ->
-    {ok, #state{}, 0}.
+    {ok, #state{watches = #{}}, 0}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -95,15 +95,19 @@ handle_cast(Msg, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_info({fevent, Wd, Flags, Path, Name} = Msg, State) ->
+handle_info({fevent, Wd, Flags, Path, Name} = Msg, #state{watches = Watches} = State) ->
     io:format("~p ~p ~p ~p", [Wd, Flags, Path, Name]),
-    janga_message:send([], ?MODULE, Msg), 
+    case maps:get(Path, Watches) of
+        {_P, IoDevice} -> read_line(IoDevice, Path);
+        _ -> ok
+    end,
     {noreply, State};
 
 handle_info(timeout, State) ->
     Config = janga_config:get_notify(),
-    [fnotify:watch(Path, Flags)||{Path, Flags} <- Config],    
-    {noreply, State};
+    Watches = setup_watcher(Config, #{}),
+    lager:info(".... ~p", [Watches]),
+    {noreply, State#state{watches = Watches}};
 
 handle_info(Info, State) ->
     {noreply, State}.
@@ -127,6 +131,26 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
+setup_watcher([], Watches) ->
+    lager:info(".... ~p", [Watches]),
+    Watches;
+setup_watcher([{Path, Flags}|Tail], Watches) ->    
+    IoDevice= open(Path),
+    fnotify:watch(Path, Flags),
+    setup_watcher(Tail, maps:put(Path, IoDevice, Watches)).
+
+open(Path) ->
+    {ok, IoDevice} = file:open(Path, [read]),
+    Size = filelib:file_size(Path),
+    file:position(IoDevice, {bof, Size}),
+    IoDevice.
+
+read_line(IoDevice, Path) ->
+    case file:read_line(IoDevice) of  
+        eof -> ok;
+        Text -> janga_message:send([], ?MODULE, Text),
+               read_line(IoDevice, Path) 
+    end.
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------

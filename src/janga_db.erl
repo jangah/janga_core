@@ -36,7 +36,8 @@ init() ->
 	create_counter().
 
 create_counter() ->
-	{atomic, ok} = mnesia:create_table(counter, [{disc_copies, [node()]}, {attributes, record_info(fields, counter)}]). 
+	%{atomic, ok} = mnesia:create_table(counter, [{disc_copies, [node()]}, {attributes, record_info(fields, counter)}]). 
+	mnesia:create_table(counter, [{disc_copies, [node()]}, {attributes, record_info(fields, counter)}]). 
 
 %% --------------------------------------------------------------------
 %% record definitions
