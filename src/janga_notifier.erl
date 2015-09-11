@@ -96,9 +96,9 @@ handle_cast(Msg, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_info({fevent, Wd, Flags, Path, Name} = Msg, #state{watches = Watches} = State) ->
-    io:format("~p ~p ~p ~p", [Wd, Flags, Path, Name]),
+    io:format("~p ~p ~p ~p ~p", [Wd, Flags, Path, Name, Watches]),
     case maps:get(Path, Watches) of
-        {_P, IoDevice} -> read_line(IoDevice, Path);
+        IoDevice -> read_line(IoDevice, Path);
         _ -> ok
     end,
     {noreply, State};
@@ -106,7 +106,6 @@ handle_info({fevent, Wd, Flags, Path, Name} = Msg, #state{watches = Watches} = S
 handle_info(timeout, State) ->
     Config = janga_config:get_notify(),
     Watches = setup_watcher(Config, #{}),
-    lager:info(".... ~p", [Watches]),
     {noreply, State#state{watches = Watches}};
 
 handle_info(Info, State) ->
@@ -132,7 +131,6 @@ code_change(OldVsn, State, Extra) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 setup_watcher([], Watches) ->
-    lager:info(".... ~p", [Watches]),
     Watches;
 setup_watcher([{Path, Flags}|Tail], Watches) ->    
     IoDevice= open(Path),
@@ -145,7 +143,7 @@ open(Path) ->
     file:position(IoDevice, {bof, Size}),
     IoDevice.
 
-read_line(IoDevice, Path) ->
+read_line(IoDevice, Path) ->    
     case file:read_line(IoDevice) of  
         eof -> ok;
         Text -> janga_message:send([], ?MODULE, Text),
