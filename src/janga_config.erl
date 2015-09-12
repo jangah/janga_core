@@ -75,8 +75,8 @@ get_ports() ->
   get_env(janga_core, ports).
 
 get_name() ->
-  get_env(janga, name).
-  
+  get_env(janga_core, name).
+
 get_env(Application, Key) ->
   {ok, Value} = application:get_env(Application, Key),
   Value.
