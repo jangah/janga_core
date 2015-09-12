@@ -146,7 +146,8 @@ open(Path) ->
 read_line(IoDevice, Path) ->    
     case file:read_line(IoDevice) of  
         eof -> ok;
-        Text -> janga_message:send([], ?MODULE, Text),
+        {ok, Text} -> janga_service_event:notify({"janga_notifier", Text}), 
+                %janga_message:send([], ?MODULE, Text),
                read_line(IoDevice, Path) 
     end.
 %% --------------------------------------------------------------------
