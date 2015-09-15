@@ -96,7 +96,7 @@ handle_cast(Msg, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_info({fevent, Wd, Flags, Path, Name} = Msg, #state{watches = Watches} = State) ->
-    io:format("~p ~p ~p ~p ~p", [Wd, Flags, Path, Name, Watches]),
+    %io:format("~p ~p ~p ~p ~p", [Wd, Flags, Path, Name, Watches]),
     case maps:get(Path, Watches) of
         IoDevice -> read_line(IoDevice, Path);
         _ -> ok
