@@ -32,11 +32,12 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/3]).
 -export([get_type/1, get_driver/1, is_activ/1, get_timer/1, get_database/1, get_description/1]).
--export([get_state/1, set_state/2, get_module_config/1, get_start_time/1, get_name/1, get_icon/1]).
+-export([get_state/1, set_state/2, get_start_time/1, get_name/1, get_icon/1]).
 -export([save_data_to_ets/2, save_data_to_ets/3, get_table_id/1, get_model/1, set_value/2, get_value/1, get_value/2]).
 -export([get_pid/1, where_is_message_from/1, get_allowed_messages/1, get_config/1]).
 -export([stop/1]).
 -export([send_time_based/5, send_message/2]).
+-export([get_module_config/1, set_module_config/2]).
 
 %% ====================================================================
 %% External functions
@@ -97,6 +98,10 @@ get_state(Name) ->
 
 get_module_config(Name) ->
     gen_server:call(?REGISTRY_NAME(Name), {get_module_config}).
+
+set_module_config(Config, Module_config) ->
+    {driver, Driver, _Data} = lists:keyfind(driver, 1, Config), 
+    lists:keyreplace(driver, 1, Config, {driver, Driver, Module_config}). 
 
 get_model(Name) ->
     gen_server:call(?REGISTRY_NAME(Name), {get_model}).
