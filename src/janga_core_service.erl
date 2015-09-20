@@ -185,7 +185,7 @@ handle_call({get_module_config}, _From, State=#state{config = Config}) ->
     case janga_config:get_value(ets, Config, false) of 
         true -> Table_Id = proplists:get_value(table_id, Config),
                 {reply, ets:tab2list(Table_Id) , State};
-        false -> {driver, {_Module, _Func}, Module_config} = lists:keyfind(driver, 1, Config),
+        false -> {driver, _Module, Module_config} = lists:keyfind(driver, 1, Config),
                  {reply, Module_config, State}
     end;
 handle_call({get_model}, _From, State=#state{config = Config}) ->    
