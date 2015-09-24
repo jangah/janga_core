@@ -17,7 +17,7 @@
 %% --------------------------------------------------------------------
 -export([get_config/1, get_config/2]).
 -export([get_id/1, get_name/2, get_service_name/1]).
--export([write_config/3, set_active/2]).
+-export([write_config/3, set_active/2, get_icon/1]).
 
 
 get_config(Application) ->
@@ -37,6 +37,11 @@ get_config(Application, Config_file) ->
 		{ok, [Config]} -> Config;
 		{error, Reason} -> {error, Reason}
 	end. 
+
+get_icon(Application) ->
+	Service = get_config(Application, ?SERVICE_CONFIG),
+	[Icon] = janga_config:get_level_values([service], [icon], Service),
+	Icon.
 
 set_active_([{service, Name, Config}], Status) ->
 	[{service, Name, lists:keyreplace(activ, 1, Config, {activ, Status})}].
@@ -111,5 +116,8 @@ write_config_test() ->
 	write_config(janga_core, "test.config", Data),
 	Config = janga_config_handler:get_config(janga_core, "test.config"), 	
 	?assertEqual(Data, Config).	
+
+get_icon_test() ->
+	?assertEqual("temp.png", get_icon("janga_core")).
 
 -endif.
