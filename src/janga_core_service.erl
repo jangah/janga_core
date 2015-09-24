@@ -334,8 +334,15 @@ terminate(Reason, _State=#state{config = Config}) ->
         1 -> driver_stop(Module, Config);
         _Any -> lager:warning("the stop function has too many arguments")
     end,
+    delete_ets(Reason, Config),
     ok.
     
+delete_ets(shutdown, Config) ->
+    lager:info("delete_ets : ~p", [Config]),
+    Table = proplists:get_value(?TABLE, Config),
+    janga_ets_mgr:delete(Table);
+delete_ets(Any, Config) ->
+    ok.
 %% --------------------------------------------------------------------
 %% Func: code_change/3
 %% Purpose: Convert process state when code is changed
