@@ -41,7 +41,10 @@ get_config(Application, Config_file) ->
 get_icon(Application) ->
 	Service = get_config(Application, ?SERVICE_CONFIG),
 	[Icon] = janga_config:get_level_values([service], [icon], Service),
-	Icon.
+	case Icon of
+		none -> "service.png";
+		_Any -> Icon
+	end.
 
 set_active_([{service, Name, Config}], Status) ->
 	[{service, Name, lists:keyreplace(activ, 1, Config, {activ, Status})}].
