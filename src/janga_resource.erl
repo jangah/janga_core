@@ -30,13 +30,17 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([get_qs_value/3]).
+-export([get_qs_value/3, get_host/1]).
 
 get_qs_value(Key, ReqData, Default) ->
   case wrq:get_qs_value(Key, ReqData) of 
     undefined -> Default;
     Any -> Any
   end.
+
+get_host(Host) ->
+    List = string:tokens(Host,":"),
+    lists:nth(1, List). 
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
