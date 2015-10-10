@@ -101,18 +101,20 @@ deployed_japps() ->
 ports() ->
 	janga_config:get_ports().
 
-version(Japp) ->
+version(Japp) when is_list(Japp) ->
+	version(list_to_atom(Japp));
+version(Japp) when is_atom(Japp) ->
 	L = application:loaded_applications(),	
 	case lists:keysearch(Japp, 1, L) of
 		false -> {false, "japp is not running."};
-		{value,{Japp,[],Version}} -> Version
+		{value,{Japp, _Desc, Version}} -> Version
 	end.
 
-check_version(Japp) when is_atom(Japp) ->
+check_version(Japp) when is_list(Japp) ->
 	Path = janga_config:get_env(janga_core, repo_dir),
 	case version(Japp) of
 		{false, Reason} -> {false, Reason};
-		V1 -> {ok, [{_A, _B, L}]} = file:consult(filename:join([Path, atom_to_list(Japp), "ebin", atom_to_list(Japp) ++ ".app"])),
+		V1 -> {ok, [{_A, _B, L}]} = file:consult(filename:join([Path, Japp, "ebin", Japp ++ ".app"])),
 			  V2 = proplists:get_value(vsn, L),
 			  case V1 =:= V2 of
 			  	true -> {true, "versions are the same"};
