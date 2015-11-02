@@ -116,6 +116,9 @@ handle_call({restore_table, Table}, _From, State) ->
     Reply = ets:file2tab(filename:join(filename:absname(Path), atom_to_list(Table)) , [{verify,true}]), 
     {reply, Reply, State};
 
+handle_call({delete_table, undefined}, _From, State) ->
+    {reply, ok, State};
+
 handle_call({delete_table, Table}, _From, State) ->
     ets:delete(Table),
     {reply, ok, State};
