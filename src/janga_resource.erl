@@ -38,7 +38,8 @@ get_qs_value(Key, ReqData, Default) ->
     Any -> Any
   end.
 
-get_host(Host) ->
+get_host(ReqData) ->
+	Host = wrq:get_req_header("host", ReqData),
     List = string:tokens(Host,":"),
     lists:nth(1, List). 
 %% --------------------------------------------------------------------
