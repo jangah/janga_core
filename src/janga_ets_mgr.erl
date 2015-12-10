@@ -42,6 +42,8 @@ backup(Table) ->
     gen_server:call(?MODULE, {backup_table, Table}).
 restore(Table) ->
     gen_server:call(?MODULE, {restore_table, Table}).
+delete(undefined) ->
+    ok;
 delete(Table) when is_list(Table) ->
     delete(list_to_atom(Table));    
 delete(Table) when is_atom(Table) ->
@@ -115,9 +117,6 @@ handle_call({restore_table, Table}, _From, State) ->
     ok = check_path(Path),
     Reply = ets:file2tab(filename:join(filename:absname(Path), atom_to_list(Table)) , [{verify,true}]), 
     {reply, Reply, State};
-
-handle_call({delete_table, undefined}, _From, State) ->
-    {reply, ok, State};
 
 handle_call({delete_table, Table}, _From, State) ->
     ets:delete(Table),
