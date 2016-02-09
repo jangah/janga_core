@@ -67,6 +67,9 @@ get_value({K, V}) ->
 get_value(none) ->
   none.
 
+get_port(JApp) when is_atom(JApp)  ->
+  get_env(JApp, port);
+
 get_port(JApp) ->
   Ports = get_env(janga_core, ports),  
   proplists:get_value(JApp, Ports).
