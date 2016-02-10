@@ -67,8 +67,14 @@ get_value({K, V}) ->
 get_value(none) ->
   none.
 
-get_port(JApp) ->
-  get_env(JApp, port).
+get_port(Japp) ->
+  case is_application_loaded(Japp, application:loaded_applications()) of
+    true ->  get_env(Japp, port);
+    false -> application:load(Japp),
+             Port = get_env(Japp, port),
+             application:unload(Japp),
+             Port
+  end.
 
 get_ports(Japps) ->
   get_ports(Japps, []).
@@ -76,14 +82,7 @@ get_ports(Japps) ->
 get_ports([], Acc) ->  
   Acc;
 get_ports([Japp|Japps], Acc) ->
-  P = case is_application_loaded(Japp, application:loaded_applications()) of
-    true ->  get_port(Japp);
-    false -> application:load(Japp),
-             Port = get_port(Japp),
-             application:unload(Japp),
-             Port
-  end,
-  get_ports(Japps, [{Japp, P}|Acc]).
+  get_ports(Japps, [{Japp, get_port(Japp)}|Acc]).
 
 is_application_loaded(Japp, Apps) ->
   case lists:keyfind(Japp, 1, Apps) of
