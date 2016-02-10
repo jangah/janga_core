@@ -99,7 +99,7 @@ deployed_japps() ->
 	[filename:basename(Dir) ||Dir <- filelib:wildcard("japps" ++ "/*"), filelib:is_dir(Dir)].
 
 ports() ->
-	janga_config:get_ports().
+	janga_config:get_ports([list_to_atom(Japp) || Japp <- deployed_japps()]).
 
 version(Japp) when is_list(Japp) ->
 	version(list_to_atom(Japp));
