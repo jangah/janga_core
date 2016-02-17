@@ -31,7 +31,7 @@
 %% External exports
 %% --------------------------------------------------------------------
 -export([start/1, stop/1, restart/1, autostart/0]).
--export([deploy/1, undeploy/1, update/1]).
+-export([deploy/1, undeploy/1, update/1, update/2]).
 -export([list_running/0, get_configs/0, get_messages/0, deployed_japps/0, ports/0]).
 -export([download/1, install/2]).
 
