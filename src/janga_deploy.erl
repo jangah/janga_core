@@ -48,7 +48,8 @@ deploy(JApp) ->
 			  add_path_for_deps(Destination, Filter)
 	end,
 	janga_message:send([], system, [{deploy, finished}, {japp, JApp}]), 
-	lager:info("japp : ~p is deployed. Now you can start it.", [JApp]).
+	lager:info("japp : ~p is deployed. Now you can start it.", [JApp]),
+	ok.
 
 undeploy(JApp) ->
 	janga_message:send([], system, [{undeploy, start}, {japp, JApp}]), 

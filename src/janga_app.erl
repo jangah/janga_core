@@ -64,7 +64,11 @@ autostart() ->
 update(JApp) when is_atom(JApp) ->
 	update(atom_to_list(JApp));
 update(JApp) ->
-	janga_deploy:update(JApp).
+	janga_deploy:update(JApp).	
+
+update(JApp, restart) ->
+	janga_deploy:update(JApp),
+	restart(JApp).
 
 deploy(JApp) when is_atom(JApp) ->
 	deploy(atom_to_list(JApp));
