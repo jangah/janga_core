@@ -20,6 +20,7 @@
 -export([get_ports/1, get_port/1, get_env/2]).
 -export([get_service_config/1, get_name/1, get_notify/0]).
 -export([get_name/0, get_repo_uri/0, get_repo_dir/0]).
+-export([get_env/0]).
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -27,6 +28,12 @@
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
+get_env() ->
+   case init:get_argument(janga_env) of
+      error -> prod;
+      {ok, [[Env]]} -> Env
+    end.
+
 get_module_config(Config) ->
     {driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
     Module_config.
