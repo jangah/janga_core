@@ -59,6 +59,16 @@ undeploy(JApp) ->
 	janga_message:send([], system, [{undeploy, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is undeployed.", [JApp]).
 
+update('janga_core') ->
+	update("janga_core");
+update("janga_core") ->
+	janga_message:send([], system, [{update, start}, {japp, "janga_core"}]),
+	Path = janga_config:get_env(janga_core, janga_core_dir), 
+	Destination = filename:join(filename:absname("deps") , "janga_core"),
+	Source = filename:absname(filename:join(filename:absname(Path), "janga_core")),
+	copy_dir(Source, Destination, "janga_core", []),	
+	janga_message:send([], system, [{update, finished}, {japp, "janga_core"}]), 
+	lager:info("japp : ~p is updated1", ["janga_core"]);
 update(JApp) ->
 	janga_message:send([], system, [{update, start}, {japp, JApp}]), 
 	Repo = janga_config:get_env(janga_core, repo_dir),
