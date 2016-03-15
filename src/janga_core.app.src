@@ -1,16 +1,16 @@
 {application, janga_core,
  [
-  {description, ""},
+  {description, "this is the core lib of jangah"},
   {vsn, git},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib,
-                  lager,
+                  lager,                  
                   gproc,                                  
                   webmachine,
                   ibrowse,
-                  fnotify                                  
+                  fnotify
                  ]},
   {mod, { janga_core_app, []}},
   {env, []}
