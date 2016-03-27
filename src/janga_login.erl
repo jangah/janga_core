@@ -36,7 +36,7 @@ login(ReqData, Context) ->
 			                              [Account, Password] = string:tokens(Str, ":"),
                                           %%lager:info("Account: ~p, Password: ~p", [Account, Password]),                  
 			                              case janga_account:is_valid_account(Account, Password) of
-                                                true -> {true, ReqData, Context};
+                                                true -> {true, wrq:set_resp_header("X-Janga-User", Account, ReqData), Context};
                                                 false-> {"Basic realm=Webmachine", ReqData, Context};
                                                 undefined -> {"Basic realm=Webmachine", ReqData, Context}
                                           end;

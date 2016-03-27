@@ -9,9 +9,10 @@
 %% Application callbacks
 %% ===================================================================
 start(_StartType, _StartArgs) ->
+	%janga_metrics:vm(),	
 	start_mnesia(),
 	janga_db:init(),
-    janga_core_sup:start_link().    
+    janga_core_sup:start_link().
 
 stop(_State) ->
 	mnesia:stop(),    
