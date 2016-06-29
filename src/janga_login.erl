@@ -23,7 +23,8 @@
 
 -module(janga_login).
 
--export([login/2]).
+-export([login/2, login/3]).
+-export([check_session/2]).
 
 -include_lib("webmachine/include/webmachine.hrl").
 
@@ -44,11 +45,33 @@ login(ReqData, Context) ->
                  end
     end.
 
+login(Account, Password, ReqData) ->
+    case is_peer_allowed(ReqData) of 
+        true -> true;
+        false -> janga_account:is_valid_account(Account, Password) 
+    end.
+
 is_peer_allowed(ReqData) ->
     Peer = wrq:peer(ReqData),
     {ok, Peers} = application:get_env(janga_core, peers),     
     lists:member(Peer, Peers).
 
+
+
+check_session(ReqData, Chat) ->
+    lager:info("Session ------------------------------- : "),
+    Session = wrq:get_cookie_value("id", ReqData),
+    lager:info("Session : ~p", [Session]),
+    check_cookie(Session, Chat).
+check_cookie(undefined, Chat) ->
+    {error, "no session available!"};
+check_cookie(Session, Chat) ->
+    case mochiweb_session:check_session_cookie(list_to_binary(Session),calendar:time_to_seconds(erlang:time()), fun(A) -> A end, Chat) of
+        {true, [TSFuture, Account]} -> lager:info("Account : ~p", [Account]),
+                                        {ok, Account};
+        {false, [TSFuture, Account]} -> lager:error("Session is unvalid! : ~p,~p", [TSFuture, Account]),
+                                        {error, "Error checking session!"}
+    end.
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
