@@ -13,3 +13,4 @@ doc/*
 etc/app.config
 _build
 rebar.lock
+rebar3.crashdump
