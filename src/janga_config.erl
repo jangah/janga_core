@@ -17,7 +17,7 @@
 %% --------------------------------------------------------------------
 -export([get_module_config/1, set_module_config/2]).
 -export([get_value/2, get_value/3, get_values/2, get_level_values/3]).
--export([get_ports/1, get_port/1, get_env/2]).
+-export([get_ports/1, get_port/1, get_env/2, get_env/3]).
 -export([get_service_config/1, get_name/1, get_notify/0, get_exometer/0]).
 -export([get_name/0, get_repo_uri/0, get_repo_dir/0]).
 -export([get_env/0]).
@@ -107,11 +107,15 @@ get_name() ->
   get_env(janga_core, name).
 
 get_exometer() ->
-  get_env(janga_core, exometer).
+  get_env(janga_core, exometer, false).
 
 get_env(Application, Key) ->
   {ok, Value} = application:get_env(Application, Key),
   Value.
+
+get_env(Application, Key, Default) ->
+  application:get_env(Application, Key, Default).
+
 
 get_name(Application) ->
   get_value(name, get_service_config(Application)).
