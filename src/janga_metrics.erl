@@ -32,39 +32,60 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([vm/0]).
+-export([init/0, vm/0]).
+
+init() ->
+    {ok, _Name} = inet:gethostname(),
+    ReportOptions = [{protocol, http},
+                     {host, <<"localhost">>},
+                     {port, 8086},
+                     {db, <<"exometer">>},
+                     {tags, [{region, ru}]}],
+
+
+    ok = exometer_report:add_reporter(exometer_report_influxdb, ReportOptions).
+
 
 vm() ->
-	ok = exometer_report:subscribe(exometer_report_influxdb,
-								[erlang, memory],
-								[total, processes, system, atom, binary, ets], 
-								?INTERVAL, [], true),
-
+  ok = exometer:new([erlang, memory],
+                    {function, erlang, memory, ['$dp'], value,
+                    [total, processes, system, atom, binary, ets]}),
 
 	ok = exometer_report:subscribe(exometer_report_influxdb,
-                                   [erlang, memory],
-                                   [total, processes, system, atom, binary,
-                                    ets], ?INTERVAL, [], true),
+								                [erlang, memory],
+								                [total, processes, system, atom, binary, ets], 
+								                ?INTERVAL, [], true),
 
+  ok = exometer:new([erlang, system],
+                    {function, erlang, system_info, ['$dp'], value,
+                    [process_count, port_count]}),
 
-    ok = exometer_report:subscribe(exometer_report_influxdb,
-                                   [erlang, system],
-                                   [process_count, port_count], ?INTERVAL,
-                                   [], true),
+  ok = exometer_report:subscribe(exometer_report_influxdb,
+                                [erlang, system],
+                                [process_count, port_count], ?INTERVAL,
+                                [], true),
 
-    % VM statistics.
+      % VM statistics.
+    ok = exometer:new([erlang, statistics],
+                      {function, erlang, statistics, ['$dp'], value,
+                       [run_queue]}),
     ok = exometer_report:subscribe(exometer_report_influxdb,
                                    [erlang, statistics],
                                    [run_queue], ?INTERVAL, [], true),
 
+    ok = exometer:new([erlang, gc],
+                      {function, erlang, statistics, [garbage_collection],
+                       match, {total_coll, rec_wrd, '_'}}),
     ok = exometer_report:subscribe(exometer_report_influxdb,
                                    [erlang, gc],
                                    [total_coll, rec_wrd], ?INTERVAL, [], true),
 
+    ok = exometer:new([erlang, io],
+                      {function, erlang, statistics, [io], match,
+                       {{'_', input}, {'_', output}}}),
     ok = exometer_report:subscribe(exometer_report_influxdb,
                                    [erlang, io],
                                    [input, output], ?INTERVAL, [], true).
-
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------

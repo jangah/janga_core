@@ -6,11 +6,13 @@
   {applications, [
                   kernel,
                   stdlib,
-                  lager,                  
+                  lager,
+                  exometer_core,
+                  exometer,
                   gproc,                                  
                   webmachine,
                   ibrowse,
-                  fnotify
+                  fnotify                  
                  ]},
   {mod, { janga_core_app, []}},
   {env, []}
