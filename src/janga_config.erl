@@ -21,13 +21,20 @@
 -export([get_service_config/1, get_name/1, get_notify/0, get_exometer/0]).
 -export([get_name/0, get_repo_uri/0, get_repo_dir/0]).
 -export([get_env/0]).
-%% --------------------------------------------------------------------
-%% record definitions
-%% --------------------------------------------------------------------
+-export([add_access_log/0, delete_access_log/0, add_perf_log/0, delete_perf_log/0]).
 
-%% --------------------------------------------------------------------
-%%% Internal functions
-%% --------------------------------------------------------------------
+add_access_log() ->
+  ok = webmachine_log:add_handler(webmachine_access_log_handler, ["/tmp"]).  
+
+delete_access_log() ->
+  ok = webmachine_log:delete_handler(webmachine_access_log_handler).  
+
+add_perf_log() ->
+  ok = webmachine_log:add_handler(webmachine_perf_log_handler, ["/tmp"]).  
+
+delete_perf_log() ->
+  ok = webmachine_log:delete_handler(webmachine_perf_log_handler).  
+
 get_env() ->
    case init:get_argument(janga_env) of
       error -> prod;
