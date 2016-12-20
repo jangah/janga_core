@@ -37,10 +37,10 @@
 init() ->
     {ok, _Name} = inet:gethostname(),
     ReportOptions = [{protocol, http},
-                     {host, <<"localhost">>},
+                     {host, <<"192.168.178.48">>},
                      {port, 8086},
                      {db, <<"exometer">>},
-                     {tags, [{region, ru}]}],
+                     {tags, [{region, de}]}],
 
 
     ok = exometer_report:add_reporter(exometer_report_influxdb, ReportOptions).
@@ -83,6 +83,7 @@ vm() ->
     ok = exometer:new([erlang, io],
                       {function, erlang, statistics, [io], match,
                        {{'_', input}, {'_', output}}}),
+    
     ok = exometer_report:subscribe(exometer_report_influxdb,
                                    [erlang, io],
                                    [input, output], ?INTERVAL, [], true).
