@@ -65,8 +65,9 @@ send_message(Nodes, Message) when is_list(Nodes) ->
 	send_message(Nodes, 'janga_actor_group', Message).    
 
 send_message(Nodes, Target, Message) ->
+	janga_metrics:spiral([jangah, send, message], 1),
 	[rpc:cast(Node_1, Target, 'broadcast', [Message]) || Node_1 <- Nodes],
-	ok.
+	true.
 
 send_after(Pid, Name, Time, Optional, Body) ->
 	janga_core_service:send_time_based(Time, Pid, Name, Optional, Body).    
@@ -74,12 +75,12 @@ send_after(Pid, Name, Time, Optional, Body) ->
 %% doc generates messages and send them. !!! only for testing !!!
 %%
 generate_messages(Loop_count) ->
-	timer:tc(message, generate_messages, [Loop_count, 0]).
+	timer:tc(janga_message, generate_messages, [Loop_count, 0]).
 generate_messages(Counter, Counter) ->
 	lager:info("finished generate_messages. ~p were generated.", [Counter]);
 generate_messages(Counter, Value) ->
-	Msg = create_message(node(), ?MODULE, {test_message, Value}),
-	send_message(nodes(), Msg),
+	Msg = create_message([], ?MODULE, {test_message, Value}),
+	send_message([node()|nodes()], Msg),
 	generate_messages(Counter, Value + 1).
 
 %% --------------------------------------------------------------------

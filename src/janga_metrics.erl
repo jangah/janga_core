@@ -25,23 +25,91 @@
 -module(janga_metrics).
 
 -define(INTERVAL, 5000).
-
+-define(INTERVAL_MINUTE, 1000 * 60).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([init/0, vm/0]).
+-export([init/0, vm/0, counter/2, gauge/2, histogram/2, spiral/2]).
+
+%% @doc Update a histogram statistic.
+%% If an exometer entry is not already present, create a histogram and
+%% subscribe to it with exometer_report_graphite.
+-spec histogram(Name :: exometer:name(), Value :: number()) ->
+    ok.
+histogram(Name, Value) ->
+    case exometer:update(Name, Value) of
+        {error, not_found} ->
+            exometer_admin:ensure(Name, histogram, [{module, exometer_histogram}]),
+            exometer_report:subscribe(exometer_report_influxdb,
+                                      Name, [mean, 50, 75, 95, 99],
+                                      ?INTERVAL, [], true),
+            exometer:update(Name, Value);
+        ok ->
+            ok
+    end.
+
+%% @doc Update a counter statistic.
+%% If an exometer entry is not already present, create a counter and
+%% subscribe to it with `exometer_report_graphite'.
+-spec counter(Name :: exometer:name(), Value :: number()) ->
+    ok.
+counter(Name, Value) ->
+    case exometer:update(Name, Value) of
+        {error, not_found} ->
+            exometer_admin:ensure(Name, counter, []),
+            exometer_report:subscribe(exometer_report_influxdb,
+                                      Name, [value],
+                                      ?INTERVAL, [], true),
+            exometer:update(Name, Value);
+        ok ->
+            ok
+    end.
+
+
+%% @doc Update a gauge statistic.
+%% If an exometer entry is not already present, create a gauge and
+%% subscribe to it with `exometer_report_graphite'.
+-spec gauge(Name :: exometer:name(), Value :: number()) ->
+    ok.
+gauge(Name, Value) ->
+    case exometer:update(Name, Value) of
+        {error, not_found} ->
+            exometer_admin:ensure(Name, gauge, []),
+            exometer_report:subscribe(exometer_report_influxdb,
+                                      Name, [value],
+                                      ?INTERVAL, [], true),
+            exometer:update(Name, Value);
+        ok ->
+            ok
+    end.
+
+%% @doc Update a spiral statistic.
+%% If an exometer entry is not already present, create a gauge and
+%% subscribe to it with `exometer_report_graphite'.
+-spec spiral(Name :: exometer:name(), Value :: number()) ->
+    ok.
+spiral(Name, Value) ->
+    case exometer:update(Name, Value) of
+        {error, not_found} ->
+            exometer_admin:ensure(Name, spiral, [{module, exometer_spiral}]),
+            exometer_report:subscribe(exometer_report_influxdb,  Name, [count, one], ?INTERVAL_MINUTE, [], true),
+            spiral(Name, Value);
+        ok ->
+            ok
+    end.
+
 
 init() ->
     {ok, _Name} = inet:gethostname(),
     ReportOptions = [{protocol, http},
-                     {host, <<"192.168.178.48">>},
+                     {host, <<"localhost">>},
                      {port, 8086},
                      {db, <<"exometer">>},
+                     {batch_window_size, ?INTERVAL},
                      {tags, [{region, de}]}],
-
 
     ok = exometer_report:add_reporter(exometer_report_influxdb, ReportOptions).
 
@@ -65,28 +133,28 @@ vm() ->
                                 [process_count, port_count], ?INTERVAL,
                                 [], true),
 
-      % VM statistics.
-    ok = exometer:new([erlang, statistics],
+      
+  ok = exometer:new([erlang, statistics],
                       {function, erlang, statistics, ['$dp'], value,
                        [run_queue]}),
-    ok = exometer_report:subscribe(exometer_report_influxdb,
+  ok = exometer_report:subscribe(exometer_report_influxdb,
                                    [erlang, statistics],
                                    [run_queue], ?INTERVAL, [], true),
 
-    ok = exometer:new([erlang, gc],
+  ok = exometer:new([erlang, gc],
                       {function, erlang, statistics, [garbage_collection],
                        match, {total_coll, rec_wrd, '_'}}),
-    ok = exometer_report:subscribe(exometer_report_influxdb,
+  ok = exometer_report:subscribe(exometer_report_influxdb,
                                    [erlang, gc],
                                    [total_coll, rec_wrd], ?INTERVAL, [], true),
 
-    ok = exometer:new([erlang, io],
-                      {function, erlang, statistics, [io], match,
-                       {{'_', input}, {'_', output}}}),
+  ok = exometer:new([erlang, io],
+                    {function, erlang, statistics, [io], match,
+                    {{'_', input}, {'_', output}}}),
     
-    ok = exometer_report:subscribe(exometer_report_influxdb,
-                                   [erlang, io],
-                                   [input, output], ?INTERVAL, [], true).
+  ok = exometer_report:subscribe(exometer_report_influxdb,
+                                [erlang, io],
+                                [input, output], ?INTERVAL, [], true).
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
