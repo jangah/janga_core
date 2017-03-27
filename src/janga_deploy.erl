@@ -35,17 +35,19 @@
 -export([deploy/1, undeploy/1, update/1]).
 -export([add_path_for_deps/2, download/1, install/2]).
 
+deploy(JApp) when is_atom(JApp) ->
+	deploy(atom_to_list(JApp));
 deploy(JApp) ->
 	janga_message:send([], system, [{deploy, start}, {japp, JApp}]), 
-	Repo = janga_config:get_env(janga_core, repo_dir),
-	Destination = filename:join(filename:absname("japps") , JApp),
-	Source = filename:absname(filename:join(filename:absname(Repo), JApp)),
+	Config = get_config(JApp),
+	Destination = janga_config:get_value(destination, Config),
+	Source = janga_config:get_value(source, Config),
+	Deploy_config = janga_config:get_value(deploy_config, Config),
 	case file:make_dir(Destination) of
-		{error,eexist} -> lager:warning("the japp : ~p already exists.", [JApp]);
+		{error,eexist} -> lager:error("the japp : ~p already exists.", [JApp]);
 		ok -> copy_dir(Source, Destination, JApp, ["messages.config", "service.config"]), 
-			  add_path(Destination),
-			  Filter = get_deps_config(Destination),
-			  add_path_for_deps(Destination, Filter)
+			  add_path(Destination),			  
+			  add_path_for_deps(Destination, Deploy_config)
 	end,
 	janga_message:send([], system, [{deploy, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is deployed. Now you can start it.", [JApp]),
@@ -53,9 +55,10 @@ deploy(JApp) ->
 
 undeploy(JApp) ->
 	janga_message:send([], system, [{undeploy, start}, {japp, JApp}]), 
-	janga_app:stop(JApp),
-	JApp_dir = filename:join(filename:absname("japps") , JApp),
-	delete_dir(JApp_dir),	
+	Config = get_config(JApp),
+	Destination = janga_config:get_value(destination, Config),
+	janga_app:stop(JApp),	
+	delete_dir(Destination),	
 	janga_message:send([], system, [{undeploy, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is undeployed.", [JApp]).
 
@@ -68,17 +71,18 @@ update("janga_core") ->
 	Source = filename:absname(filename:join(filename:absname(Path), "janga_core")),
 	copy_dir(Source, Destination, "janga_core", []),	
 	janga_message:send([], system, [{update, finished}, {japp, "janga_core"}]), 
-	lager:info("japp : ~p is updated1", ["janga_core"]);
+	lager:info("japp : ~p is updated!", ["janga_core"]);
+
 update(JApp) ->
 	janga_message:send([], system, [{update, start}, {japp, JApp}]), 
-	Repo = janga_config:get_env(janga_core, repo_dir),
-	Destination = filename:join(filename:absname("japps") , JApp),
-	Source = filename:absname(filename:join(filename:absname(Repo), JApp)),
-	Configs = get_additional_configs(Destination),
-	copy_dir(Source, Destination, JApp, [Configs|["messages.config", "service.config"]]),	
-	Filter = get_deps_config(Destination),
-	Configs = get_additional_configs(Destination),
-	add_path_for_deps(Destination, Filter),
+	Config = get_config(JApp),
+	Destination = janga_config:get_value(destination, Config),
+	Source = janga_config:get_value(source, Config),
+	Deploy_config = janga_config:get_value(deploy_config, Config),
+	Additional_Config = janga_config:get_value(additional_config, Config),
+
+	copy_dir(Source, Destination, JApp, [Additional_Config|["messages.config", "service.config"]]),			
+	add_path_for_deps(Destination, Deploy_config),
 	janga_message:send([], system, [{update, finished}, {japp, JApp}]), 
 	lager:info("japp : ~p is updated", [JApp]).
 
@@ -94,6 +98,20 @@ download(JApp) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
+get_config(Japp) when is_list(Japp) ->
+	get_config(list_to_atom(Japp));
+get_config(Japp) when is_atom(Japp) ->
+	Repo = janga_config:get_env(janga_core, repo_dir),
+	Japps_dir = janga_config:get_env(janga_core, japps_dir),
+	Destination = filename:join(filename:absname(Japps_dir) , Japp),
+	Source = filename:absname(filename:join(filename:absname(Repo), Japp)),
+	Configs = get_additional_configs(Destination),
+	Deploy_config = get_deps_config(Destination),
+	Config = [{repo_dir, Repo}, {destination, Destination}, {japps_dir, Japps_dir}, 
+	{source, Source}, {additional_config, Configs}, {deploy_config, Deploy_config}],
+	lager:info("config : ~p", [Config]),
+	Config.
+	
 copy_dir(Source, Destination, JApp, Filter) ->
 	Files = all_files_from_dir(Source),
 	copy_files(Files, Destination, JApp, Filter).
@@ -101,15 +119,23 @@ copy_dir(Source, Destination, JApp, Filter) ->
 copy_files([], _Destination, _JApp, _Filter) ->
 	ok;
 copy_files([File|Files], Destination, JApp, Filter) ->
-	%%lager:info("file to copy : ~p", [File]),
+	%lager:info("file to copy : ~p", [File]),
 	case filelib:is_dir(File) of
 		true -> create_dir(File, Destination, JApp);
 		false -> case is_config_file(filename:join([Destination, extract_rest(File, JApp)]), Filter) of 
 					false -> copy_file(File, Destination, JApp, Filter);
-					true -> lager:info("we don't overwrite config file: ~p", [File])
+					true -> Source_config = read_config(File),
+							Dest_config = read_config(filename:join([Destination, extract_rest(File, JApp)])),
+							Merged_config = merge_config(Dest_config, Source_config),
+							lager:info("merge_config : ~p", [Merged_config]),
+							lager:info("we don't overwrite config file, yet: ~p", [File])
 				 end
 	end,
 	copy_files(Files, Destination, JApp, Filter).
+
+read_config(Filename) ->
+	{ok, [File]}=file:consult(Filename),
+	File.
 
 create_dir(Dir, Destination, JApp) ->
 	%%lager:info("make dir : ~p", [filename:join([Destination, extract_rest(Dir, JApp)])]),
@@ -243,11 +269,60 @@ version(Japp, Path) ->
 
 create_zip_name(Japp, Path) ->
 	Japp ++ "-" ++ version(Japp, Path) ++ ".zip".
+
+merge_config([{"default", List}], [{"default", List}]) ->
+	lager:info("don't do it now");
+merge_config([{service, Name, Old_config}], [{service, Name, New_config}]) ->
+	MC_1 = merge_entries(Old_config, New_config),
+	{driver, Module, Old_driver_config} = lists:keyfind(driver, 1, Old_config),
+	{driver, Module, New_driver_config} = lists:keyfind(driver, 1, New_config),
+	MC_2 = merge_entries(Old_driver_config, New_driver_config),	
+	[{service, Name, lists:keyreplace(driver, 1, MC_1, {driver, Module, MC_2})}].
+
+is_new_entry(Old_config, {_Key, _Value, _Value1}) ->
+	false;
+is_new_entry(Old_config, {Key, Value}) ->
+	not proplists:is_defined(Key, Old_config).
+
+merge_entries(Old_config, New_config) ->
+	C = [Entry||Entry <- New_config, is_new_entry(Old_config, Entry)],
+	lists:merge(C, Old_config).
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
+
+setup_application_env() ->
+	application:set_env(janga_core, japps_dir, "testdata/japps"),
+	application:set_env(janga_core, repo_dir, "testdata/repo").
+
+get_config_test() ->
+	{setup ,
+	setup_application_env(),
+	get_config(dashboard)
+	}.
+
+deploy_test() ->
+	{setup ,
+	setup_application_env(),
+	deploy("dashboard")
+	}.
+
+update_test() ->
+	{setup ,
+	setup_application_env(),
+	update("dashboard")
+	}.
+
+undeploy_test() ->
+	{setup ,
+	setup_application_env(),
+	undeploy("dashboard"),
+	Destination = janga_config:get_value(destination, Config),
+	}.
+
+
 get_additional_configs_test() ->
 	{ok, CWD} = file:get_cwd(),
 	Result = [filename:join([CWD, "test/conf_2", "projects/projects.config"]), filename:join([CWD, "test/conf_2", "projects/projects.config"])],
@@ -256,10 +331,52 @@ get_additional_configs_test() ->
 
 get_deps_config_test() ->
 	{ok, CWD} = file:get_cwd(),
-
 	?assertEqual([], get_deps_config(filename:join([CWD, "test", "conf_1"]))),
 	?assertEqual([filename:join([CWD, "test/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "test", "conf_2"]))).
 
 backup_test() ->
 	backup(opm).
+
+merge_config_test() ->
+	New = [{service,"opm",[
+				{type,actor},
+	 			{ets,false},
+	 			{ui, true},
+	 			{driver, opm_driver,[
+							{default,"alarm1.mp3"},
+							{emqtt, [
+									{host, "horst"},
+									{client_id, "jangah_client_opm"}]}
+	 					 			]},
+     			{activ,false},
+     			{timer, 0},
+     			{icon,"temp.png"},
+     			{description,"opm"}]}],
+    Old = [{service,"opm",[
+				{type,actor},
+	 			{ets,true},
+	 			{ui, true},
+	 			{driver, opm_driver,[
+							{default,"alarm.mp3"}
+							]},
+     			{activ,false},
+     			{timer, 0},
+     			{icon,"temp.png"},
+     			{description,"opm"}]}],
+    Merged = [{service,"opm",[
+				{type,actor},
+	 			{ets,true},
+	 			{ui, true},
+	 			{driver, opm_driver,[							
+	 						{default,"alarm.mp3"},
+							{emqtt, [
+									{host, "horst"},
+									{client_id, "jangah_client_opm"}]}
+	 					 			]},
+     			{activ,false},
+     			{timer, 0},
+     			{icon,"temp.png"},
+     			{description,"opm"}]}],
+
+     ?assertEqual(Merged, merge_config(Old, New)).
 -endif.
