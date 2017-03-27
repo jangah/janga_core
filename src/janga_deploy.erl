@@ -127,11 +127,16 @@ copy_files([File|Files], Destination, JApp, Filter) ->
 					true -> Source_config = read_config(File),
 							Dest_config = read_config(filename:join([Destination, extract_rest(File, JApp)])),
 							Merged_config = merge_config(Dest_config, Source_config),
-							lager:info("merge_config : ~p", [Merged_config]),
-							lager:info("we don't overwrite config file, yet: ~p", [File])
+							write_config(filename:join([Destination, extract_rest(File, JApp)]), Merged_config),
+							lager:info("merge_config : ~p", [Merged_config])
 				 end
 	end,
 	copy_files(Files, Destination, JApp, Filter).
+	
+write_config(Dest_config, false) ->
+	lager:info("nothing to write yet");
+write_config(Filename, Data) ->
+	ok = file:write_file(Filename, io_lib:fwrite("~p.\n", [Data])).
 
 read_config(Filename) ->
 	{ok, [File]}=file:consult(Filename),
@@ -145,8 +150,6 @@ copy_file(File, Destination, JApp, Filter) ->
 	lager:debug("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
 	lager:debug("Filter : ~p", [Filter]),
 	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
-
-
 
 is_config_file(File, Filter) ->
 	case lists:member(filename:basename(File) , Filter) of	
@@ -271,7 +274,8 @@ create_zip_name(Japp, Path) ->
 	Japp ++ "-" ++ version(Japp, Path) ++ ".zip".
 
 merge_config([{"default", List}], [{"default", List}]) ->
-	lager:info("don't do it now");
+	lager:info("don't do it now"),
+	false;
 merge_config([{service, Name, Old_config}], [{service, Name, New_config}]) ->
 	MC_1 = merge_entries(Old_config, New_config),
 	{driver, Module, Old_driver_config} = lists:keyfind(driver, 1, Old_config),
@@ -318,8 +322,7 @@ update_test() ->
 undeploy_test() ->
 	{setup ,
 	setup_application_env(),
-	undeploy("dashboard"),
-	Destination = janga_config:get_value(destination, Config),
+	undeploy("dashboard")
 	}.
 
 
