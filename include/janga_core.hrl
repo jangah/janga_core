@@ -36,5 +36,10 @@
 
 -record(counter, {key, value}).
 
+% some macros for webmachine resource handling
 
-
+-define(SET_RESP_HEADER(ReqData), wrq:set_resp_header("location", wrq:raw_path(ReqData), ReqData)).
+-define(PARSE_BODY(ReqData), mochiweb_util:parse_qs(wrq:req_body(ReqData))).
+-define(ROOT(Config), janga_config:get_value(root, Config, [])).
+-define(INJECT_ROOT(Context, Template, Parameter), Template:render([{root, Context#context.root}|Parameter])).
+-define(NODE(ReqData), wrq:get_qs_value("node", ReqData)).
