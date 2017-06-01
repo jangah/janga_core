@@ -22,6 +22,7 @@
 -define(STOPPED, "stopped").
 -define(MAX_QUEUE_LENGTH, 30).
 
+-define(LOOKUP_PID(Name), gproc:lookup_pid({n,l, Name})).
 -define(LOOKUP_ACTORS, gproc:lookup_values({p, l, actor})).
 -define(REGISTRY_NAME(Name),{via, gproc, {n,l, Name}}).
 

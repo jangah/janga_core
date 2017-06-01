@@ -43,10 +43,8 @@
 %% ====================================================================
 %% External functions
 %% ====================================================================
-update_config(App_name) when is_list(App_name) ->
-    update_config(list_to_atom(App_name));
-update_config(App_name) when is_atom(App_name)->
-    gen_server:cast(App_name, {update_config, App_name}).    
+update_config(App_name) when is_list(App_name)->
+    gen_server:cast(?LOOKUP_PID(App_name), {update_config, App_name}).    
 
 send_message(Name, Message) ->
     gen_server:cast(list_to_atom(Name), {send_message, Message}).
