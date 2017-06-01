@@ -38,10 +38,16 @@
 -export([stop/1]).
 -export([send_time_based/5, send_message/2]).
 -export([get_module_config/1, set_module_config/2]).
+-export([update_config/1]).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
+update_config(App_name) when is_list(App_name) ->
+    update_config(list_to_atom(App_name));
+update_config(App_name) when is_atom(App_name)->
+    gen_server:cast(App_name, {update_config, App_name}).    
+
 send_message(Name, Message) ->
     gen_server:cast(list_to_atom(Name), {send_message, Message}).
 
@@ -252,6 +258,10 @@ handle_cast({send_message, Message}, State=#state{config = Config}) ->
     {driver, Module, _Module_config} = lists:keyfind(driver, 1, Config),
     ?SEND_1(Module, Message),
     {noreply, State};
+handle_cast({update_config, App_name}, State) ->
+    lager:info("update config"),
+    {Config, Messages} = janga_config_handler:get_config(App_name),
+    {noreply, State#state{config = Config, allowed_msgs = Messages}};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 %% --------------------------------------------------------------------
