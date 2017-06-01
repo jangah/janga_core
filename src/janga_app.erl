@@ -34,6 +34,7 @@
 -export([deploy/1, undeploy/1, update/1, update/2]).
 -export([list_running/0, get_configs/0, get_messages/0, deployed_japps/0, ports/0]).
 -export([download/1, install/2]).
+-export([update_config/1]).
 
 start(JApp) when is_list(JApp)->
 	start(list_to_atom(JApp));
@@ -104,6 +105,8 @@ deployed_japps() ->
 ports() ->
 	janga_config:get_ports([list_to_atom(Japp) || Japp <- deployed_japps()]).
 
+update_config(App_name) when is_list(App_name)->
+	janga_core_service:update_config(App_name).
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
