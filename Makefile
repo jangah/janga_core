@@ -13,7 +13,7 @@ tar:
 	cd ..; tar cv --exclude='.git' --exclude='.DS_Store' --exclude='logs' --exclude='Mnesia*' -f $(REPO)/$(PROJECT).$(VERSION).tar  $(PROJECT) 
 
 dist: tar
-	 cd ..;scp $(REPOSRC)/$(PROJECT).$(VERSION).tar $(USR)@$(HOST):$(TARGET)
+	 cd ..;scp $(REPO)/$(PROJECT).$(VERSION).tar $(USR)@$(HOST):$(TARGET)
 	 ssh $(USR)@$(HOST) 'cd $(TARGET); tar xf $(TARGET)/$(PROJECT).$(VERSION).tar; rm $(TARGET)/$(PROJECT).$(VERSION).tar'
 
 app: deps

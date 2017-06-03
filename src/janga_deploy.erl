@@ -124,12 +124,14 @@ copy_files([File|Files], Destination, JApp, Filter) ->
 		true -> create_dir(File, Destination, JApp);
 		false -> case is_config_file(filename:join([Destination, extract_rest(File, JApp)]), Filter) of 
 					false -> copy_file(File, Destination, JApp, Filter);
-					true -> Source_config = read_config(File),
-							Dest_config = read_config(filename:join([Destination, extract_rest(File, JApp)])),
-							Merged_config = merge_config(Dest_config, Source_config),
-							write_config(filename:join([Destination, extract_rest(File, JApp)]), Merged_config),
-							lager:info("merge_config : ~p", [Merged_config])
+					true -> lager:info("we don't overwrite config file: ~p", [File])
 				 end
+%							Source_config = read_config(File),
+%							Dest_config = read_config(filename:join([Destination, extract_rest(File, JApp)])),
+%							Merged_config = merge_config(Dest_config, Source_config),
+%							write_config(filename:join([Destination, extract_rest(File, JApp)]), Merged_config),
+%							lager:info("merge_config : ~p", [Merged_config])
+				 
 	end,
 	copy_files(Files, Destination, JApp, Filter).
 	
