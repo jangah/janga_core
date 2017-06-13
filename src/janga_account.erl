@@ -30,9 +30,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0]).
-
 -export([is_valid_account/2]).
--export([get_accounts/0]).
 %% ====================================================================
 %% External functions
 %% ====================================================================
@@ -74,8 +72,7 @@ init([]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_call({is_valid_account, Account, Password}, _From, State) ->
-   	Accounts = get_accounts(),
-    {reply, check_account(Accounts, Account, Password), State};
+    {reply, check_account(Account, Password), State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -120,15 +117,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-check_account(Accounts, Account, Password) ->
-	case lists:keyfind(Account, 1, Accounts) of 
-		{Account, Password} -> true;
-		_ -> false
-	end.
-
-get_accounts() ->
-	{ok, Accounts} = file:consult(filename:join([code:priv_dir(janga_core), "config", "accounts.conf"])),
-	Accounts.
+check_account(Account, Password) ->
+	User_store = janga_config:get_env(janga_core, userstore, juser),
+	User_store:check_account(Account, Password).
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------
@@ -137,12 +128,4 @@ get_accounts() ->
 %% --------------------------------------------------------------------
 -include_lib("eunit/include/eunit.hrl").
 -ifdef(TEST).
-get_accounts_test() ->
-	application:start(janga_core),
-	?assertEqual([{"a", "a"}], get_accounts()).
-
-check_account_test()->
-	Accounts = [{"user", "password"}],
-	?assertEqual(true, check_account(Accounts, "user", "password")),
-	?assertEqual(false, check_account(Accounts, "no_user", "password")).
 -endif.
