@@ -415,6 +415,22 @@ is_msgs_allowed({_Node, Sensor, Id}, {all, Sensor, Id}) ->
     true;
 is_msgs_allowed({_Node, Sensor, Id}, {all, Sensor1, Id1}) ->
     false;
+% ------- local ------
+
+is_msgs_allowed({Node, Sensor, Id}, {local, Sensor, Id}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), Sensor, Id});
+is_msgs_allowed({Node, Sensor, Id}, {local, all, all}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), all, all});
+is_msgs_allowed({Node, Sensor, Id}, {local, all, Id}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), all, Id});
+is_msgs_allowed({Node, Sensor, Id}, {local, Sensor, all}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), Sensor, all});
+is_msgs_allowed({Node, Sensor, Id}, {local, Sensor1, Id}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), Sensor1, Id});
+is_msgs_allowed({Node, Sensor, Id}, {local, Sensor, Id1}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), Sensor, Id1});
+is_msgs_allowed({Node, Sensor, Id}, {local, Sensor1, Id1}) ->
+    is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), Sensor1, Id1});
 
 is_msgs_allowed({Node, Sensor, Id}, Allowed_msgs) ->
     false.
@@ -489,5 +505,8 @@ is_message_well_known_test() ->
 is_msgs_allowed_test() ->
     Allowed_msgs_1 = [{all, <<"hc_sr501_driver">>, all}],
     ?assertEqual(true, is_msgs_allowed({<<"horst@raspberrypi">>,<<"hc_sr501_driver">>,<<"0">>}, Allowed_msgs_1)),
-    ?assertEqual(false, is_msgs_allowed({<<"horst@raspberrypi">>,<<"cube_driver">>,<<"0">>}, Allowed_msgs_1)).
+    ?assertEqual(false, is_msgs_allowed({<<"horst@raspberrypi">>,<<"cube_driver">>,<<"0">>}, Allowed_msgs_1)),
+    Allowed_msgs_2 = [{local, <<"hc_sr501_driver">>, all}],
+    ?assertEqual(true, is_msgs_allowed({atom_to_binary(node(),utf8),<<"hc_sr501_driver">>,<<"0">>}, Allowed_msgs_1)).
+
 -endif.
