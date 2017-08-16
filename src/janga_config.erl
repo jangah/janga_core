@@ -22,6 +22,13 @@
 -export([get_name/0, get_repo_uri/0, get_repo_dir/0]).
 -export([get_env/0]).
 -export([add_access_log/0, delete_access_log/0, add_perf_log/0, delete_perf_log/0]).
+-export([get_core_version/0]).
+
+get_core_version() ->
+  case application:get_key(janga_core, vsn) of
+    {ok, Version} -> Version;
+    undefined -> lager:error("can't read the version of the janga_core"), []
+  end.
 
 add_access_log() ->
   ok = webmachine_log:add_handler(webmachine_access_log_handler, ["/tmp"]).  
