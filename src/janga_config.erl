@@ -22,12 +22,17 @@
 -export([get_name/0, get_repo_uri/0, get_repo_dir/0]).
 -export([get_env/0]).
 -export([add_access_log/0, delete_access_log/0, add_perf_log/0, delete_perf_log/0]).
--export([get_core_version/0]).
+-export([get_core_version/0, get_japp_version/1]).
 
 get_core_version() ->
-  case application:get_key(janga_core, vsn) of
+  get_japp_version(janga_core).
+
+get_japp_version(Japp) when is_list(Japp) ->
+  get_japp_version(list_to_atom(Japp));
+get_japp_version(Japp) when is_atom(Japp) ->
+  case application:get_key(Japp, vsn) of
     {ok, Version} -> Version;
-    undefined -> lager:error("can't read the version of the janga_core"), []
+    undefined -> lager:error("can't read the version of ~p", [Japp]), []
   end.
 
 add_access_log() ->
