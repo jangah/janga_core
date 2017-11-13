@@ -42,7 +42,7 @@ get_icon(Application) ->
 	Service = get_config(Application, ?SERVICE_CONFIG),
 	[Icon] = janga_config:get_level_values([service], [icon], Service),
 	case Icon of
-		none -> "service.png";
+		none -> "si-glyph-electron.svg";
 		_Any -> Icon
 	end.
 
