@@ -20,6 +20,7 @@
 -export([get_ports/1, get_port/1, get_env/2, get_env/3]).
 -export([get_service_config/1, get_name/1, get_notify/0, get_exometer/0]).
 -export([get_name/0, get_repo_uri/0, get_repo_dir/0]).
+-export([get_japps_dir/0]).
 -export([get_env/0]).
 -export([add_access_log/0, delete_access_log/0, add_perf_log/0, delete_perf_log/0]).
 -export([get_core_version/0, get_japp_version/1]).
@@ -121,6 +122,9 @@ get_repo_uri() ->
 
 get_repo_dir() ->
   get_env(janga_core, repo_dir).
+
+get_japps_dir() ->
+  get_env(janga_core, japps_dir).
 
 get_name() ->
   get_env(janga_core, name).
