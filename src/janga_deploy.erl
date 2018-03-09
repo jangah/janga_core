@@ -45,6 +45,7 @@ deploy(JApp) ->
 	Deploy_config = janga_config:get_value(deploy_config, Config),
 	case file:make_dir(Destination) of
 		{error,eexist} -> lager:error("the japp : ~p already exists.", [JApp]);
+		{error,enoent} -> lager:error("the japp : ~p doesn't exists.", [JApp]);
 		ok -> copy_dir(Source, Destination, JApp, ["messages.config", "service.config"]), 
 			  add_path(Destination),			  
 			  add_path_for_deps(Destination, Deploy_config)
@@ -192,6 +193,7 @@ add_path(Destination) ->
 	true = code:add_pathz(filename:join(Destination, "ebin")). 
 
 add_path_for_deps(Destination, Filter) ->	
+	lager:info("Filter : ~p", [Filter]),
 	Files = filelib:wildcard(Destination ++ "/deps/*"),	
 	[add_path(File)||File <- Files, filelib:is_dir(File), is_to_add(filename:join([Destination,"deps",File]), Filter)].
 
@@ -202,6 +204,7 @@ is_to_add(File, Filter) ->
 	end.
 
 get_deps_config(Path_for_japp) ->
+	lager:info("Path_for_japp : ~p", [Path_for_japp]),
 	case file:consult(filename:join([Path_for_japp, "deploy.config"])) of
 		{ok, Deps} -> create_path_for_deps(Path_for_japp, Deps);
 		_ -> []
@@ -263,15 +266,23 @@ backup(JApp) ->
 	ZipFile.
 
 %%TODO: move it in a central place and use it also from jappsrepo
+create_zip(File, Japp, Repo_path) when is_atom(Japp) ->
+		create_zip(File, atom_to_list(Japp), Repo_path);
 create_zip(File, Japp, Repo_path) when is_list(File) ->	
 	Files = filelib:wildcard(Japp ++ "/**", Repo_path),
 	{ok, ZipFile} = zip:zip(File, Files, [{cwd, Repo_path}]),
 	ZipFile.
 
-version(Japp, Path) ->
-	{ok, [{_A, _B, L}]} = file:consult(filename:join([Path, Japp, "ebin", Japp ++ ".app"])),
-	proplists:get_value(vsn, L).
+version(Japp, Path) when is_atom(Japp) ->
+	version(atom_to_list(Japp), Path);
+version(Japp, Path) ->	
+	case file:consult(filename:join([Path, Japp, "ebin", Japp ++ ".app"])) of
+		R = {ok, [{_A, _B, L}]} -> proplists:get_value(vsn, L);
+		{error,enoent} -> "0"
+	end.
 
+create_zip_name(Japp, Path) when is_atom(Japp) ->
+	create_zip_name(atom_to_list(Japp), Path);
 create_zip_name(Japp, Path) ->
 	Japp ++ "-" ++ version(Japp, Path) ++ ".zip".
 
@@ -327,17 +338,11 @@ undeploy_test() ->
 	undeploy("dashboard")
 	}.
 
-
-get_additional_configs_test() ->
-	{ok, CWD} = file:get_cwd(),
-	Result = [filename:join([CWD, "test/conf_2", "projects/projects.config"]), filename:join([CWD, "test/conf_2", "projects/projects.config"])],
-	?assertEqual([], get_additional_configs(filename:join([CWD, "test", "conf_1"]))),
-	?assertEqual(Result, get_additional_configs(filename:join([CWD, "test", "conf_2"]))).
-
 get_deps_config_test() ->
 	{ok, CWD} = file:get_cwd(),
-	?assertEqual([], get_deps_config(filename:join([CWD, "test", "conf_1"]))),
-	?assertEqual([filename:join([CWD, "test/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "test", "conf_2"]))).
+	?assertEqual([], get_deps_config(filename:join([CWD, "testdata", "conf_1"]))),
+	?assertEqual([filename:join([CWD, "testdata/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "testdata", "conf_2"]))).
+
 
 backup_test() ->
 	backup(opm).
