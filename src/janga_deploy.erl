@@ -320,29 +320,29 @@ get_config_test() ->
 	get_config(dashboard)
 	}.
 
-deploy_test() ->
-	{setup ,
-	setup_application_env(),
-	deploy("dashboard")
-	}.
+%deploy_test() ->
+%	{setup ,
+%	setup_application_env(),
+%	deploy("dashboard")
+%	}.
 
-update_test() ->
-	{setup ,
-	setup_application_env(),
-	update("dashboard")
-	}.
-
-undeploy_test() ->
-	{setup ,
-	setup_application_env(),
-	undeploy("dashboard")
-	}.
-
-get_deps_config_test() ->
-	{ok, CWD} = file:get_cwd(),
-	?assertEqual([], get_deps_config(filename:join([CWD, "testdata", "conf_1"]))),
-	?assertEqual([filename:join([CWD, "testdata/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "testdata", "conf_2"]))).
-
+%update_test() ->
+%	{setup ,
+%	setup_application_env(),
+%	update("dashboard")
+%	}.
+%
+%undeploy_test() ->
+%	{setup ,
+%	setup_application_env(),
+%	undeploy("dashboard")
+%	}.
+%
+%get_deps_config_test() ->
+%	{ok, CWD} = file:get_cwd(),
+%	?assertEqual([], get_deps_config(filename:join([CWD, "testdata", "conf_1"]))),
+%	?assertEqual([filename:join([CWD, "testdata/conf_2", "deps","jsx"])], get_deps_config(filename:join([CWD, "testdata", "conf_2"]))).
+%
 
 backup_test() ->
 	backup(opm).

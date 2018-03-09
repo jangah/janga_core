@@ -20,4 +20,3 @@ variables-*
 Mnesia.*
 data
 doc/*
-testdata/japps/*
