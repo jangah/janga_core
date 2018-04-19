@@ -76,7 +76,7 @@ handle_call(_Request, _From, State) ->
 %% --------------------------------------------------------------------
 handle_cast({broadcast, [_Node ,_Sensor, _Id, _Time, _Optional, _Payload] = Message}, State) ->
     lager:debug("got message: ~p", [Message]),
-    janga_metrics:spiral([jangah, got, message], 1),
+    %janga_metrics:spiral([jangah, got, message], 1),
     send_msg(Message),
     {noreply, State};
 

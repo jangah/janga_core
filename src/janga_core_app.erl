@@ -9,7 +9,7 @@
 %% Application callbacks
 %% ===================================================================
 start(_StartType, _StartArgs) ->	
-	start_exometer(janga_config:get_exometer()),
+	%start_exometer(janga_config:get_exometer()),
 	start_mnesia(),
 	janga_db:init(),
     janga_core_sup:start_link().
