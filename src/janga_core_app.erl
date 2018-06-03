@@ -9,7 +9,7 @@
 %% Application callbacks
 %% ===================================================================
 start(_StartType, _StartArgs) ->	
-	start_exometer(janga_config:get_exometer()),
+	start_exometer(janga_config:run_exometer()),
 	start_mnesia(),
 	janga_db:init(),
     janga_core_sup:start_link().
@@ -26,7 +26,7 @@ start_mnesia() ->
 	lager:info("schema is created and the database is running.").
 
 start_exometer(true) ->
-	janga_metrics:init(),	
+	janga_metrics:init(janga_config:get_exometer()),	
 	lager:info("start exometer metrics"),
 	janga_metrics:vm();
 start_exometer(false) ->

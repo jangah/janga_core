@@ -32,7 +32,7 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([init/0, vm/0, counter/2, gauge/2, histogram/2, spiral/2]).
+-export([init/1, vm/0, counter/2, gauge/2, histogram/2, spiral/2]).
 
 %% @doc Update a histogram statistic.
 %% If an exometer entry is not already present, create a histogram and
@@ -102,14 +102,14 @@ spiral(Name, Value) ->
     end.
 
 
-init() ->
+init(ReportOptions) when is_list(ReportOptions) ->
     {ok, _Name} = inet:gethostname(),
-    ReportOptions = [{protocol, http},
-                     {host, <<"localhost">>},
-                     {port, 8086},
-                     {db, <<"exometer">>},
-                     {batch_window_size, ?INTERVAL},
-                     {tags, [{region, de}]}],
+%    ReportOptions = [{protocol, http},
+%                     {host, <<"localhost">>},
+%                     {port, 8086},
+%                     {db, <<"exometer">>},
+%                     {batch_window_size, ?INTERVAL},
+%                     {tags, [{region, de}]}],
 
     ok = exometer_report:add_reporter(exometer_report_influxdb, ReportOptions).
 
