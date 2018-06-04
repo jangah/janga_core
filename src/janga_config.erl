@@ -133,7 +133,8 @@ get_name() ->
 run_exometer() ->
   Config = get_env(janga_core, exometer, []),
   case lists:keyfind(run, 1, Config) of
-    false -> false;
+    false -> lager:error("property run is not set in config file!"), 
+             false;
     {run, Flag} -> Flag
   end. 
 
