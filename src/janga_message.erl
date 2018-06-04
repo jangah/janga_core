@@ -65,7 +65,7 @@ send_message(Nodes, Message) when is_list(Nodes) ->
 	send_message(Nodes, 'janga_actor_group', Message).    
 
 send_message(Nodes, Target, Message) ->
-	%janga_metrics:spiral([jangah, send, message], 1),
+	janga_metrics:spiral([jangah, send, message], 1),
 	[rpc:cast(Node_1, Target, 'broadcast', [Message]) || Node_1 <- Nodes],
 	true.
 
