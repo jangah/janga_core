@@ -28,7 +28,8 @@ clean:
 	rm -rf log/*
 	rmdir log
 
-tests: clean app eunit ct
+tests: 
+	$(REBAR) skip_deps=true eunit
 
 eunit:
 	@$(REBAR) eunit skip_deps=true
