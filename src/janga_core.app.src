@@ -12,6 +12,7 @@
                   gproc,                                  
                   webmachine,
                   ibrowse,
+                  os_mon,
                   fnotify                  
                  ]},
   {mod, { janga_core_app, []}},

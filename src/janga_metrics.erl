@@ -110,7 +110,6 @@ init(ReportOptions) when is_list(ReportOptions) ->
 %                     {db, <<"exometer">>},
 %                     {batch_window_size, ?INTERVAL},
 %                     {tags, [{region, de}]}],
-
     ok = exometer_report:add_reporter(exometer_report_influxdb, ReportOptions).
 
 
@@ -154,7 +153,13 @@ vm() ->
     
   ok = exometer_report:subscribe(exometer_report_influxdb,
                                 [erlang, io],
-                                [input, output], ?INTERVAL, [], true).
+                                [input, output], ?INTERVAL, [], true),
+
+  exometer_admin:set_default(['_'], cpu, [{module, exometer_cpu}]),
+  ok = exometer:new([qstat, cpu], cpu, [{sample_interval, ?INTERVAL}]),
+  ok = exometer_report:subscribe(exometer_report_influxdb, 
+                                [qstat, cpu], 
+                                [avg1, avg5, avg15], ?INTERVAL).
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
