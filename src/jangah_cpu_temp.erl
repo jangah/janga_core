@@ -21,7 +21,7 @@
     probe_code_change/3
    ]).
 
--include("../deps/exometer_core/include/exometer.hrl").
+-include_lib("exometer_core/include/exometer.hrl").
 
 -define(DATAPOINTS, [temp]).
 
