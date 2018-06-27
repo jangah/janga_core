@@ -155,11 +155,22 @@ vm() ->
                                 [erlang, io],
                                 [input, output], ?INTERVAL, [], true),
 
-  exometer_admin:set_default(['_'], cpu, [{module, exometer_cpu}]),
+  true = exometer_admin:set_default(['_'], cpu, [{module, exometer_cpu}]),
   ok = exometer:new([qstat, cpu], cpu, [{sample_interval, ?INTERVAL}]),
   ok = exometer_report:subscribe(exometer_report_influxdb, 
                                 [qstat, cpu], 
-                                [avg1, avg5, avg15], ?INTERVAL).
+                                [avg1, avg5, avg15], ?INTERVAL),
+  
+  case os:type() of
+    {unix,darwin} -> lager:warning("on osx i can't measure the cpu temp, yet");
+    {unix,linux}  -> true = exometer_admin:set_default(['_'], cpu_temp, [{module, jangah_cpu_temp}]),
+                     ok = exometer:new([janga, cpu, temp], cpu_temp, [{sample_interval, ?INTERVAL}]),
+                     ok = exometer_report:subscribe(exometer_report_influxdb, [janga, cpu, temp], 
+                                                    [temp], ?INTERVAL)
+  end.
+
+
+  
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
