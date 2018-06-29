@@ -46,6 +46,7 @@ send_req(Uri, Headers, Verb, Body, Options, Timeout) ->
 	case ibrowse:send_req(Uri, Headers, Verb, Body, Options, Timeout) of
 		{error, Reason} -> lager:error("can't connect to : ~p, because of ~p", [Uri, Reason]),
 							{error, "can't connect. For details, look at the log"};
+		{ok, Status, _ResponseHeaders, _ResponseBody} = Any -> Any;
 		Any -> Any
 	end.
 %% --------------------------------------------------------------------
