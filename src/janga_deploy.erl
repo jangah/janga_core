@@ -152,7 +152,7 @@ create_dir(Dir, Destination, JApp) ->
 copy_file(File, Destination, JApp, Filter) ->
 	lager:debug("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
 	lager:debug("Filter : ~p", [Filter]),
-	{ok, _BytesCopied} = file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
+	file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
 
 is_config_file(File, Filter) ->
 	case lists:member(filename:basename(File) , Filter) of	
