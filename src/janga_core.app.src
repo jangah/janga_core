@@ -1,12 +1,11 @@
 {application, janga_core,
  [
   {description, "this is the core lib of jangah"},
-  {vsn, git},
+  {vsn, "0.1.0"},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib,
-                  lager,
                   exometer_core,
                   %exometer,
                   gproc,                                  

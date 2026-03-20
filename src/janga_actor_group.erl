@@ -75,7 +75,7 @@ handle_call(_Request, _From, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_cast({broadcast, [_Node ,_Sensor, _Id, _Time, _Optional, _Payload] = Message}, State) ->
-    lager:debug("got message: ~p", [Message]),
+    logger:debug("got message: ~p", [Message]),
     janga_metrics:spiral([jangah, got, message], 1),
     send_msg(Message),
     {noreply, State};
@@ -112,7 +112,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-send_msg([Node ,Sensor, Id, Time, Optional, Payload] = Message) ->
+send_msg([_Node ,_Sensor, _Id, _Time, _Optional, _Payload] = Message) ->
     [gen_server:cast(Pid, {message, Message}) || {Pid, _Something} <- ?LOOKUP_ACTORS].
 %% --------------------------------------------------------------------
 %%% Test functions

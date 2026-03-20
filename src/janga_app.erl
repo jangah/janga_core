@@ -41,9 +41,9 @@ start(JApp) when is_list(JApp)->
 start(JApp) ->
 	 case application:start(JApp) of
 	 	ok -> janga_message:send([], system, [{start, finished}, {japp, JApp}]),  
-	 		 lager:info("~p is started.", [JApp]);
-	 	{error, Reason} -> lager:error("~p", [Reason]),
-	 					   lager:error("Maybe ~p is not deployed. You have to deploy it first.", [JApp])
+	 		 logger:info("~p is started.", [JApp]);
+	 	{error, Reason} -> logger:error("~p", [Reason]),
+	 					   logger:error("Maybe ~p is not deployed. You have to deploy it first.", [JApp])
 	 end.
 
 stop(JApp)  when is_list(JApp)->

@@ -19,15 +19,15 @@ stop(_State) ->
     ok.
 
 start_mnesia() ->
-	lager:info("create the schema for the database"),
+	logger:info("create the schema for the database"),
 	stopped = mnesia:stop(),    
     mnesia:create_schema([node()]),
     ok = mnesia:start(),
-	lager:info("schema is created and the database is running.").
+	logger:info("schema is created and the database is running.").
 
 start_exometer(true) ->
 	janga_metrics:init(janga_config:get_exometer()),	
-	lager:info("start exometer metrics"),
+	logger:info("start exometer metrics"),
 	janga_metrics:vm();
 start_exometer(false) ->
 	ok.

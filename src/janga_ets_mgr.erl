@@ -88,18 +88,18 @@ init([]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_call({init_table, Pid, Name, Data}, _From, State) ->
-	lager:info("init_table for name : ~p ", [Name]),
+	logger:info("init_table for name : ~p ", [Name]),
 	link(Pid),
 	Table_Name = case ets:info(Name) of 
 		undefined ->
-			lager:info("create new ets table ~p", [Name]),
+			logger:info("create new ets table ~p", [Name]),
 		    TableId = ets:new(Name, [public, named_table]),
     		ets:insert(TableId, Data),
     		ets:setopts(TableId, {heir, self(), Data}),
     		ets:give_away(TableId, Pid, Data),
     		TableId;
     	_InfoList ->
-    		lager:info("use existing ets table : ~p", [Name]),
+    		logger:info("use existing ets table : ~p", [Name]),
     		ets:setopts(Name, {heir, self(), Data}),
     		ets:give_away(Name, Pid, Data),	 
     		Name
@@ -144,17 +144,17 @@ handle_cast(_Msg, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_info({'EXIT',Pid, killed}, State) ->
-    lager:info("Thing (~p) !! is now dead, farewell TableId: ~n", [Pid]),
+    logger:info("Thing (~p) !! is now dead, farewell TableId: ~n", [Pid]),
     {noreply, State};
 
 handle_info({'EXIT',Pid, Reason}, State) ->
-	lager:info("Exit Pid : ~p with reason :~p ", [Pid, Reason]),	
+	logger:info("Exit Pid : ~p with reason :~p ", [Pid, Reason]),	
 	{noreply, State};
 
 handle_info({'ETS-TRANSFER', TableId, Pid, _Data}, State) ->
-	lager:info("Thing_pid : ~p",[Pid]),
-    lager:info("Warning TableId: ~p OwnerPid: ~p is dying", [TableId, Pid]),
-    lager:info("Thing(~p) => ETS Manager(~p) handling TableId: ~p~n", [Pid, self(), TableId]),
+	logger:info("Thing_pid : ~p",[Pid]),
+    logger:info("Warning TableId: ~p OwnerPid: ~p is dying", [TableId, Pid]),
+    logger:info("Thing(~p) => ETS Manager(~p) handling TableId: ~p~n", [Pid, self(), TableId]),
     {noreply, State};
 
 handle_info(_Info, State) ->

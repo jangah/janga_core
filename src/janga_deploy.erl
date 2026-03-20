@@ -34,6 +34,7 @@
 %% --------------------------------------------------------------------
 -export([deploy/1, undeploy/1, update/1]).
 -export([add_path_for_deps/2, download/1, install/2]).
+-export([is_valid_japp/1, get_config/1]).
 
 deploy(JApp) when is_atom(JApp) ->
 	deploy(atom_to_list(JApp));
@@ -43,15 +44,20 @@ deploy(JApp) ->
 	Destination = janga_config:get_value(destination, Config),
 	Source = janga_config:get_value(source, Config),
 	Deploy_config = janga_config:get_value(deploy_config, Config),
+	Additional_Config = janga_config:get_value(additional_config, Config),
 	case file:make_dir(Destination) of
-		{error,eexist} -> lager:error("the japp : ~p already exists.", [JApp]);
-		{error,enoent} -> lager:error("the japp : ~p doesn't exists.", [JApp]);
-		ok -> copy_dir(Source, Destination, JApp, ["messages.config", "service.config"]), 
+		{error,eexist} -> logger:error("the japp : ~p already exists.", [JApp]);
+		{error,enoent} -> logger:error("the japp : ~p doesn't exists.", [JApp]);
+		ok -> copy_dir(Source, Destination, JApp, [Additional_Config, "messages.config", "service.config"]), 
 			  add_path(Destination),			  
 			  add_path_for_deps(Destination, Deploy_config)
 	end,
-	janga_message:send([], system, [{deploy, finished}, {japp, JApp}]), 
-	lager:info("japp : ~p is deployed. Now you can start it.", [JApp]),
+	case is_valid_japp(JApp) of
+		true -> janga_message:send([], system, [{deploy, finished}, {japp, JApp}]), 
+				logger:info("japp : ~p is deployed. Now you can start it.", [JApp]);
+		false -> undeploy(JApp),
+				janga_message:send([], system, [{deploy, error}, {japp, JApp}])				 
+	end,
 	ok.
 
 undeploy(JApp) ->
@@ -61,7 +67,7 @@ undeploy(JApp) ->
 	janga_app:stop(JApp),	
 	delete_dir(Destination),	
 	janga_message:send([], system, [{undeploy, finished}, {japp, JApp}]), 
-	lager:info("japp : ~p is undeployed.", [JApp]).
+	logger:info("japp : ~p is undeployed.", [JApp]).
 
 update('janga_core') ->
 	update("janga_core");
@@ -72,7 +78,7 @@ update("janga_core") ->
 	Source = filename:absname(filename:join(filename:absname(Path), "janga_core")),
 	copy_dir(Source, Destination, "janga_core", []),	
 	janga_message:send([], system, [{update, finished}, {japp, "janga_core"}]), 
-	lager:info("japp : ~p is updated!", ["janga_core"]);
+	logger:info("japp : ~p is updated!", ["janga_core"]);
 
 update(JApp) ->
 	janga_message:send([], system, [{update, start}, {japp, JApp}]), 
@@ -82,10 +88,10 @@ update(JApp) ->
 	Deploy_config = janga_config:get_value(deploy_config, Config),
 	Additional_Config = janga_config:get_value(additional_config, Config),
 
-	copy_dir(Source, Destination, JApp, [Additional_Config|["messages.config", "service.config"]]),			
+	copy_dir(Source, Destination, JApp, [Additional_Config,"messages.config", "service.config"]),			
 	add_path_for_deps(Destination, Deploy_config),
 	janga_message:send([], system, [{update, finished}, {japp, JApp}]), 
-	lager:info("japp : ~p is updated", [JApp]).
+	logger:info("japp : ~p is updated", [JApp]).
 
 download(JApp) ->
 	{ok, "200", Header, {file, Name}} = ibrowse:send_req(janga_config:get_env(janga_core, repo_uri) ++ atom_to_list(JApp), [], get, [], [{save_response_to_file, true}]),
@@ -93,6 +99,15 @@ download(JApp) ->
 	FileName = lists:nth(2,string:tokens(lists:nth(2,string:tokens(Content_Disposition, ";")),"=")),
 	file:rename(Name, filename:join(["/tmp", FileName])),
 	{ok, FileName}.
+
+is_valid_japp(Japp) ->
+    case is_dir_struct_valid(create_japp_dirs(Japp), true) of
+        false -> false;
+        true -> case is_japp_files(create_japp_files(Japp), true) of
+                    false -> false;
+                    true -> true
+                end
+    end.
 %% --------------------------------------------------------------------
 %% record definitions
 %% --------------------------------------------------------------------
@@ -110,7 +125,7 @@ get_config(Japp) when is_atom(Japp) ->
 	Deploy_config = get_deps_config(Destination),
 	Config = [{repo_dir, Repo}, {destination, Destination}, {japps_dir, Japps_dir}, 
 	{source, Source}, {additional_config, Configs}, {deploy_config, Deploy_config}],
-	lager:info("config : ~p", [Config]),
+	logger:info("config : ~p", [Config]),
 	Config.
 	
 copy_dir(Source, Destination, JApp, Filter) ->
@@ -120,38 +135,29 @@ copy_dir(Source, Destination, JApp, Filter) ->
 copy_files([], _Destination, _JApp, _Filter) ->
 	ok;
 copy_files([File|Files], Destination, JApp, Filter) ->
-	%lager:info("file to copy : ~p", [File]),
+	%logger:info("file to copy : ~p", [File]),
 	case filelib:is_dir(File) of
 		true -> create_dir(File, Destination, JApp);
 		false -> case is_config_file(filename:join([Destination, extract_rest(File, JApp)]), Filter) of 
 					false -> copy_file(File, Destination, JApp, Filter);
-					true -> lager:info("we don't overwrite config file: ~p", [File])
+					true -> logger:info("we don't overwrite config file: ~p", [File])
 				 end
 %							Source_config = read_config(File),
 %							Dest_config = read_config(filename:join([Destination, extract_rest(File, JApp)])),
 %							Merged_config = merge_config(Dest_config, Source_config),
 %							write_config(filename:join([Destination, extract_rest(File, JApp)]), Merged_config),
-%							lager:info("merge_config : ~p", [Merged_config])
+%							logger:info("merge_config : ~p", [Merged_config])
 				 
 	end,
 	copy_files(Files, Destination, JApp, Filter).
 	
-write_config(Dest_config, false) ->
-	lager:info("nothing to write yet");
-write_config(Filename, Data) ->
-	ok = file:write_file(Filename, io_lib:fwrite("~p.\n", [Data])).
-
-read_config(Filename) ->
-	{ok, [File]}=file:consult(Filename),
-	File.
-
 create_dir(Dir, Destination, JApp) ->
-	%%lager:info("make dir : ~p", [filename:join([Destination, extract_rest(Dir, JApp)])]),
+	%%logger:info("make dir : ~p", [filename:join([Destination, extract_rest(Dir, JApp)])]),
 	file:make_dir(filename:join([Destination, extract_rest(Dir, JApp)])).
 
 copy_file(File, Destination, JApp, Filter) ->
-	lager:debug("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
-	lager:debug("Filter : ~p", [Filter]),
+	logger:debug("copy_file : ~p", [filename:join([Destination, extract_rest(File, JApp)])]),
+	logger:debug("Filter : ~p", [Filter]),
 	file:copy(File, filename:join([Destination, extract_rest(File, JApp)])).
 
 is_config_file(File, Filter) ->
@@ -193,7 +199,7 @@ add_path(Destination) ->
 	true = code:add_pathz(filename:join(Destination, "ebin")). 
 
 add_path_for_deps(Destination, Filter) ->	
-	lager:info("Filter : ~p", [Filter]),
+	logger:info("Filter : ~p", [Filter]),
 	Files = filelib:wildcard(Destination ++ "/deps/*"),	
 	[add_path(File)||File <- Files, filelib:is_dir(File), is_to_add(filename:join([Destination,"deps",File]), Filter)].
 
@@ -204,7 +210,7 @@ is_to_add(File, Filter) ->
 	end.
 
 get_deps_config(Path_for_japp) ->
-	lager:info("Path_for_japp : ~p", [Path_for_japp]),
+	logger:info("Path_for_japp : ~p", [Path_for_japp]),
 	case file:consult(filename:join([Path_for_japp, "deploy.config"])) of
 		{ok, Deps} -> create_path_for_deps(Path_for_japp, Deps);
 		_ -> []
@@ -215,11 +221,6 @@ get_additional_configs(Path_for_config) ->
 		{ok, Configs} -> Configs;
 		_ -> []
 	end.
-
-create_path_for_config(_Path_for_japp, []) ->
-	[];
-create_path_for_config(Path_for_japp, [Configs]) ->
-	[filename:join([Path_for_japp, Config]) || Config <- Configs].
 
 create_path_for_deps(_Path_for_japp, []) ->
 	[];
@@ -233,7 +234,7 @@ delete_dir(JApp_dir) ->
 delete_files([], Dirs) ->
 	delete_dirs(Dirs);
 delete_files([File|Files], Dirs) ->
-	%%lager:info("file to delete : ~p", [File]),
+	%%logger:info("file to delete : ~p", [File]),
 	N_dirs = case filelib:is_dir(File) of
 		true -> [File|Dirs];
 		false -> file:delete(File), Dirs 
@@ -247,13 +248,13 @@ delete_dirs([Dir|Dirs]) ->
 	delete_dirs(Dirs). 
 
 install(JApp, ZipFile) ->
-	lager:info("starting installing : ~p", [JApp]),
+	logger:info("starting installing : ~p", [JApp]),
 	Repo_path = janga_config:get_env(janga_core, repo_dir),
 	ZipFile = backup(atom_to_list(JApp)),
-	lager:info("backup : ~p", [ZipFile]),
+	logger:info("backup : ~p", [ZipFile]),
 	delete_dir(filename:join([Repo_path, JApp])),
 	extract_zip_to_repo(ZipFile, ?TMPDIR, Repo_path),
-	lager:info("finished installing : ~p", [JApp]),
+	logger:info("finished installing : ~p", [JApp]),
 	ok.
 
 extract_zip_to_repo(ZipFile, Tmp_path, Repo_path) ->
@@ -277,7 +278,7 @@ version(Japp, Path) when is_atom(Japp) ->
 	version(atom_to_list(Japp), Path);
 version(Japp, Path) ->	
 	case file:consult(filename:join([Path, Japp, "ebin", Japp ++ ".app"])) of
-		R = {ok, [{_A, _B, L}]} -> proplists:get_value(vsn, L);
+		_R = {ok, [{_A, _B, L}]} -> proplists:get_value(vsn, L);
 		{error,enoent} -> "0"
 	end.
 
@@ -287,7 +288,7 @@ create_zip_name(Japp, Path) ->
 	Japp ++ "-" ++ version(Japp, Path) ++ ".zip".
 
 merge_config([{"default", List}], [{"default", List}]) ->
-	lager:info("don't do it now"),
+	logger:info("don't do it now"),
 	false;
 merge_config([{service, Name, Old_config}], [{service, Name, New_config}]) ->
 	MC_1 = merge_entries(Old_config, New_config),
@@ -296,14 +297,71 @@ merge_config([{service, Name, Old_config}], [{service, Name, New_config}]) ->
 	MC_2 = merge_entries(Old_driver_config, New_driver_config),	
 	[{service, Name, lists:keyreplace(driver, 1, MC_1, {driver, Module, MC_2})}].
 
-is_new_entry(Old_config, {_Key, _Value, _Value1}) ->
+is_new_entry(_Old_config, {_Key, _Value, _Value1}) ->
 	false;
-is_new_entry(Old_config, {Key, Value}) ->
+is_new_entry(Old_config, {Key, _Value}) ->
 	not proplists:is_defined(Key, Old_config).
 
 merge_entries(Old_config, New_config) ->
 	C = [Entry||Entry <- New_config, is_new_entry(Old_config, Entry)],
 	lists:merge(C, Old_config).
+
+is_dir_struct_valid(false, true) ->
+	logger:error("japp dir does not exists"),
+	false;
+is_dir_struct_valid([], Return) ->
+    Return;
+is_dir_struct_valid([_Japp_dir|Japp_dirs], false) ->
+    is_dir_struct_valid(Japp_dirs, false);
+is_dir_struct_valid([Japp_dir|Japp_dirs], true) ->
+    case is_dir_valid(Japp_dir) of
+        true -> is_dir_struct_valid(Japp_dirs, true);
+        false -> is_dir_struct_valid(Japp_dirs, false)
+    end.
+    
+is_dir_valid(Dir) ->
+    case filelib:is_dir(Dir) of
+		false -> logger:error("dir : ~p does not exists!", [Dir]),
+				 false;
+		true -> true
+	end.
+
+is_japp_files([], Return) ->
+    Return;
+is_japp_files([_Japp_file|Japp_files], false) ->
+    is_japp_files(Japp_files, false);
+is_japp_files([Japp_file|Japp_files], true) ->
+    case is_japp_file(Japp_file) of
+        true -> is_japp_files(Japp_files, true);
+        false -> is_japp_files(Japp_files, false)
+    end.
+    
+is_japp_file(Japp) ->
+    case filelib:is_file(Japp) of
+		false -> logger:error("file : ~p does not exists!", [Japp]),
+				 false;
+		true -> true
+	end.
+
+create_japp_dirs(Japp) when is_atom(Japp) ->
+	create_japp_dirs(atom_to_list(Japp));
+create_japp_dirs(Japp) ->
+	case filelib:is_dir(create_file_name(Japp)) of
+		false -> false;
+		true -> [filename:absname("japps/" ++ Japp),
+     			filename:join([create_file_name(Japp), "priv", "config"]),
+     			filename:join([create_file_name(Japp), "ebin"])]
+	end.
+
+create_japp_files(Japp) when is_atom(Japp) ->
+	create_japp_files(atom_to_list(Japp));
+create_japp_files(Japp) ->
+    [filename:join([create_file_name(Japp), "priv", "config", "service.config"]),
+     filename:join([create_file_name(Japp), "priv", "config", "messages.config"]),
+     filename:join([create_file_name(Japp), "ebin", Japp ++ ".app"])].
+
+create_file_name(Japp) ->
+	filename:absname("japps/" ++ Japp).
 %% --------------------------------------------------------------------
 %%% Test functions
 %% --------------------------------------------------------------------

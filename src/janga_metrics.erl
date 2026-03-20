@@ -162,7 +162,7 @@ vm() ->
                                 [nprocs, avg1, avg5, avg15], ?INTERVAL),
   
   case os:type() of
-    {unix,darwin} -> lager:warning("on osx i can't measure the cpu temp, yet");
+    {unix,darwin} -> logger:warning("on osx i can't measure the cpu temp, yet");
     {unix,linux}  -> true = exometer_admin:set_default(['_'], cpu_temp, [{module, jangah_cpu_temp}]),
                      ok = exometer:new([janga, cpu, temp], cpu_temp, [{sample_interval, ?INTERVAL}]),
                      ok = exometer_report:subscribe(exometer_report_influxdb, [janga, cpu, temp], 

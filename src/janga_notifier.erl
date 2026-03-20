@@ -74,7 +74,7 @@ init([]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_call(Request, From, State) ->
+handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
@@ -85,7 +85,7 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_cast(Msg, State) ->
+handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% --------------------------------------------------------------------
@@ -95,11 +95,10 @@ handle_cast(Msg, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_info({fevent, Wd, Flags, Path, Name} = Msg, #state{watches = Watches} = State) ->
-    %io:format("~p ~p ~p ~p ~p", [Wd, Flags, Path, Name, Watches]),
-    case maps:get(Path, Watches) of
-        IoDevice -> read_line(IoDevice, Path);
-        _ -> ok
+handle_info({fevent, _Wd, _Flags, Path, _Name}, #state{watches = Watches} = State) ->
+    case maps:find(Path, Watches) of
+        {ok, IoDevice} -> read_line(IoDevice, Path);
+        error -> ok
     end,
     {noreply, State};
 
@@ -108,7 +107,7 @@ handle_info(timeout, State) ->
     Watches = setup_watcher(Config, #{}),
     {noreply, State#state{watches = Watches}};
 
-handle_info(Info, State) ->
+handle_info(_Info, State) ->
     {noreply, State}.
 
 %% --------------------------------------------------------------------
@@ -116,7 +115,7 @@ handle_info(Info, State) ->
 %% Description: Shutdown the server
 %% Returns: any (ignored by gen_server)
 %% --------------------------------------------------------------------
-terminate(Reason, State) ->
+terminate(_Reason, _State) ->
     ok.
 
 %% --------------------------------------------------------------------
@@ -124,7 +123,7 @@ terminate(Reason, State) ->
 %% Purpose: Convert process state when code is changed
 %% Returns: {ok, NewState}
 %% --------------------------------------------------------------------
-code_change(OldVsn, State, Extra) ->
+code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% --------------------------------------------------------------------

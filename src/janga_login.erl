@@ -61,7 +61,7 @@ is_peer_allowed(ReqData) ->
 
 check_session(ReqData, Chat) ->
     Session = wrq:get_cookie_value("id", ReqData),
-    lager:info("Session : ~p", [Session]),
+    logger:info("Session : ~p", [Session]),
     check_cookie(Session, Chat).
 
 check_cookie(undefined, _Chat) ->
@@ -69,9 +69,9 @@ check_cookie(undefined, _Chat) ->
 check_cookie(Session, Chat) ->
     case mochiweb_session:check_session_cookie(list_to_binary(Session),
         calendar:time_to_seconds(erlang:time()), fun(A) -> A end, Chat) of
-        {true, [_TSFuture, Account]} -> lager:info("Account : ~p", [Account]),
+        {true, [_TSFuture, Account]} -> logger:info("Account : ~p", [Account]),
                                         {ok, Account};
-        {false, [TSFuture, Account]} -> lager:error("Session is unvalid! : ~p,~p", [TSFuture, Account]),
+        {false, [TSFuture, Account]} -> logger:error("Session is unvalid! : ~p,~p", [TSFuture, Account]),
                                         {error, "Error checking session!"}
     end.
 %% --------------------------------------------------------------------

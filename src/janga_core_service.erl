@@ -233,7 +233,7 @@ handle_cast(die, State) ->
     exit(self(),kill),
     {noreply, State};
 handle_cast({message, [Node ,Sensor, Id, Time, Optional, Payload]}, State=#state{allowed_msgs = Allowed_msgs, config = Config}) ->
-    lager:debug("Message=~p ", [[Node ,Sensor, Id, Time, Optional, Payload]]),
+    logger:debug("Message=~p ", [[Node ,Sensor, Id, Time, Optional, Payload]]),
     Config_1 = handle_msg([Node ,Sensor, Id, Time, Optional, Payload], Config, is_message_well_known({Node, Sensor, Id}, Allowed_msgs)),
     {noreply, State#state{config = Config_1}};
 
@@ -250,14 +250,14 @@ handle_cast({set_value, Value}, State=#state{config = Config}) ->
     {noreply, State#state{value=Value}};
 handle_cast({stop}, State=#state{config = Config}) ->
     Name = janga_config:get_value(name, Config), 
-    lager:info("stopping service : ~p ", [Name]),
+    logger:info("stopping service : ~p ", [Name]),
      {stop, normal, State}; 
 handle_cast({send_message, Message}, State=#state{config = Config}) ->
     {driver, Module, _Module_config} = lists:keyfind(driver, 1, Config),
     ?SEND_1(Module, Message),
     {noreply, State};
 handle_cast({update_config, App_name}, State) ->
-    lager:info("update config"),
+    logger:info("update config"),
     {Config, Messages} = janga_config_handler:get_config(App_name),
     {noreply, State#state{config = Config, allowed_msgs = Messages}};
 handle_cast(_Msg, State) ->
@@ -275,7 +275,7 @@ handle_info(timeout, State=#state{config = Config}) ->
     Config_2 = driver_init(Driver, janga_config:get_value(init, Module_config, true), Config_1),
     true = gproc:reg({p, l, janga_config:get_value(type, Config)}, self()), 
 	start_timer(janga_config:get_value(timer, Config_2, 0)),
-    {noreply, State#state{start_time=now(), config = Config_2}};
+    {noreply, State#state{start_time=erlang:system_time(millisecond), config = Config_2}};
 
 handle_info({call_invoke}, State=#state{config = Config}) ->
     {driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
@@ -284,13 +284,13 @@ handle_info({call_invoke}, State=#state{config = Config}) ->
     {noreply, State#state{config = Config_1}};
 
 handle_info({gpio_interrupt, 0, Pin, Status}, State=#state{config = Config}) ->   
-    lager:debug("gpio_interrupt for pin : ~p with status : ~p",[Pin, Status]),
+    logger:debug("gpio_interrupt for pin : ~p with status : ~p",[Pin, Status]),
     {driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
     Config_1 = Module:janga_handle_msg({gpio_interrupt, 0, Pin, Status}, Config, Module_config),
     {noreply, State#state{config = Config_1}};
 
 handle_info({external_interrupt, Application, _Data_type, Body} = Msg, State=#state{config = Config}) ->   
-    lager:info("external_interrupt from Application : ~p with Body : ~p",[Application, Body]),
+    logger:info("external_interrupt from Application : ~p with Body : ~p",[Application, Body]),
     {driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
     Config_1 = Module:janga_handle_msg(Msg, Config, Module_config),
     {noreply, State#state{config = Config_1}};
@@ -298,11 +298,11 @@ handle_info({external_interrupt, Application, _Data_type, Body} = Msg, State=#st
 handle_info({update_config, ?MESSAGES_CONFIG},  State=#state{config = Config, allowed_msgs = _Allowed_msgs}) ->
     {driver, Module, _Module_config} = lists:keyfind(driver, 1, Config), 
     Allowed_msgs_1 = node_config:get_messages_for_module(Module, janga_config_handler:get_id(Config)),    
-    lager:info("update messages.config for service : ~p", [Module]),
+    logger:info("update messages.config for service : ~p", [Module]),
     {noreply, State#state{allowed_msgs = Allowed_msgs_1}};
 
 handle_info({'ETS-TRANSFER', TableId, Pid, _Data}, State=#state{config = Config}) ->
-    lager:info("ETS Manager (~p) -> Serivce (~p) getting TableId: ~p~n", [Pid, self(), TableId]),
+    logger:info("ETS Manager (~p) -> Serivce (~p) getting TableId: ~p~n", [Pid, self(), TableId]),
     Config_1 = case lists:keysearch(table_id, 1, Config) of 
         false -> [{table_id, TableId}| Config];
         {value, _Table} -> lists:keyreplace(table_id, 1, Config, {table_id, TableId})  
@@ -310,12 +310,12 @@ handle_info({'ETS-TRANSFER', TableId, Pid, _Data}, State=#state{config = Config}
     {noreply, State#state{config = Config_1}};
  
 handle_info({send_after, Name, Optional, Body}, State=#state{timed_msgs = Timed_msgs}) ->
-    lager:info("now we send the message from : ~p with body : ~p ", [Name, Body]),
+    logger:info("now we send the message from : ~p with body : ~p ", [Name, Body]),
     janga_message:send([], Name, Optional, Body),
     {noreply, State#state{timed_msgs = dict:erase({self(), Name}, Timed_msgs)}};
     
 handle_info({Port, Payload}, State=#state{config = Config}) when is_port(Port) ->
-    lager:info("got a message from a port with payload: ~p ", [Payload]),
+    logger:info("got a message from a port with payload: ~p ", [Payload]),
     {driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
     Config_1 = Module:janga_handle_msg(Payload, Config, Module_config),        
     {noreply, State#state{config = Config_1}};
@@ -324,7 +324,7 @@ handle_info({'EXIT', _Port, normal}, State) ->
     {noreply, State};  
 
 handle_info(Info, State) ->
-    lager:error("~p got message : ~p that i don't understand. ~p", [?MODULE, Info, State]),
+    logger:error("~p got message : ~p that i don't understand. ~p", [?MODULE, Info, State]),
     {noreply, State}.
 
 %% --------------------------------------------------------------------
@@ -333,23 +333,23 @@ handle_info(Info, State) ->
 %% Returns: any (ignored by gen_server)
 %% --------------------------------------------------------------------
 terminate(Reason, _State=#state{config = Config}) ->
-    lager:info("Reason for termination : ~p",[Reason]),
+    logger:info("Reason for termination : ~p",[Reason]),
     {driver, Module, _Module_config} = lists:keyfind(driver, 1, Config), 
-    lager:info("stopping service of type : ~p", [Module]),
+    logger:info("stopping service of type : ~p", [Module]),
     Exports = janga_config:get_value(exports, Module:module_info(), []),
     case janga_config:get_value(janga_terminate, Exports) of 
-        undefined -> lager:warning("there is no stop function in module : ~p", [Module]);
+        undefined -> logger:warning("there is no stop function in module : ~p", [Module]);
         1 -> driver_stop(Module, Config);
-        _Any -> lager:warning("the stop function has too many arguments")
+        _Any -> logger:warning("the stop function has too many arguments")
     end,
     delete_ets(Reason, Config),
     ok.
     
 delete_ets(shutdown, Config) ->
-    lager:info("delete_ets : ~p", [Config]),
+    logger:info("delete_ets : ~p", [Config]),
     Table = proplists:get_value(?TABLE, Config),
     janga_ets_mgr:delete(Table);
-delete_ets(Any, Config) ->
+delete_ets(_Any, _Config) ->
     ok.
 %% --------------------------------------------------------------------
 %% Func: code_change/3
@@ -364,7 +364,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 notify(true, _Name, []) ->
-    %%lager:info(".... ~p", [Name]),
+    %%logger:info(".... ~p", [Name]),
     false;
 notify(true, Name, Value) ->
     janga_service_event:notify({Name, Value});
@@ -378,7 +378,7 @@ is_message_well_known({Node, Sensor, Id}, Allowed_msgs) ->
     end.
 
 is_msgs_allowed({Node, Sensor, Id}, [Check|Checks]) ->
-    %%lager:info("is_allowed : ~p ~p ~p ~p", [Node, Sensor, Id, Checks]),
+    %%logger:info("is_allowed : ~p ~p ~p ~p", [Node, Sensor, Id, Checks]),
     case is_msgs_allowed({Node, Sensor, Id}, Check) of 
         true -> true;
         false -> is_msgs_allowed({Node, Sensor, Id}, Checks)
@@ -388,33 +388,33 @@ is_msgs_allowed({_Node, _Sensor, _Id}, {all, all, all}) ->
     true;
 is_msgs_allowed({_Node, Sensor, _Id}, {all, Sensor, all}) ->
     true;
-is_msgs_allowed({_Node, Sensor, _Id}, {all, Sensor1, all}) ->
+is_msgs_allowed({_Node, _Sensor, _Id}, {all, _Sensor1, all}) ->
     false;
 
 is_msgs_allowed({_Node, _Sensor, Id}, {all, all, Id}) ->
     true;
-is_msgs_allowed({_Node, _Sensor, Id}, {all, all, Id1}) ->
+is_msgs_allowed({_Node, _Sensor, _Id}, {all, all, _Id1}) ->
     false;
 
 is_msgs_allowed({Node, _Sensor, _Id}, {Node, all, all}) ->
     true;
-is_msgs_allowed({Node, _Sensor, _Id}, {Node1, all, all}) ->
+is_msgs_allowed({_Node, _Sensor, _Id}, {_Node1, all, all}) ->
     false;
 
 is_msgs_allowed({Node, Sensor, _Id}, {Node, Sensor, all}) ->
     true;
-is_msgs_allowed({Node, Sensor, _Id}, {Node1, Sensor1, all}) ->
-    false;
 
 is_msgs_allowed({Node, _Sensor, Id}, {Node, all, Id}) ->
     true;
-is_msgs_allowed({Node, _Sensor, Id}, {Node1, all, Id1}) ->
+is_msgs_allowed({_Node, _Sensor, _Id}, {_Node1, all, _Id1}) ->
     false;
 
 is_msgs_allowed({_Node, Sensor, Id}, {all, Sensor, Id}) ->
     true;
-is_msgs_allowed({_Node, Sensor, Id}, {all, Sensor1, Id1}) ->
+is_msgs_allowed({_Node, _Sensor, _Id}, {all, _Sensor1, _Id1}) ->
     false;
+is_msgs_allowed({Node, Sensor, Id}, {Node, Sensor, Id}) ->
+    true;
 % ------- local ------
 
 is_msgs_allowed({Node, Sensor, Id}, {local, Sensor, Id}) ->
@@ -432,40 +432,40 @@ is_msgs_allowed({Node, Sensor, Id}, {local, Sensor, Id1}) ->
 is_msgs_allowed({Node, Sensor, Id}, {local, Sensor1, Id1}) ->
     is_msgs_allowed({Node, Sensor, Id}, {atom_to_binary(node(), utf8), Sensor1, Id1});
 
-is_msgs_allowed({Node, Sensor, Id}, Allowed_msgs) ->
+is_msgs_allowed({_Node, _Sensor, _Id}, _Allowed_msgs) ->
     false.
 
 handle_msg([Node ,Sensor, Id, Time, Optional, Body], Config, true) ->
-    %%lager:info("got message : ~p : ~p", [Time, Body]),
+    %%logger:info("got message : ~p : ~p", [Time, Body]),
     {driver, Module, Module_config} = lists:keyfind(driver, 1, Config),
     Module:janga_handle_msg([Node ,Sensor, Id, Time, Optional, Body], Config, Module_config);
 
 handle_msg([Node ,Sensor, Id, _Time, _Optional, _Body], Config, false) ->
-    lager:debug("got message which i don't understand : ~p", [{Node, Sensor, Id}]),
+    logger:debug("got message which i don't understand : ~p", [{Node, Sensor, Id}]),
     Config.
 
 driver_init(Module, false, Config) ->
-    lager:debug("don't init driver : ~p", [Module]),
+    logger:debug("don't init driver : ~p", [Module]),
     check_init(Module),
     Config;
 driver_init(Module, true, Config) ->
-    lager:debug("call init for driver : ~p", [Module]),    
+    logger:debug("call init for driver : ~p", [Module]),    
     {ok, Config_1} = Module:janga_init(Config),
     Config_1.
 
 driver_stop(Module, Config) ->
-    lager:debug("call stop for driver : ~p", [Module]),    
+    logger:debug("call stop for driver : ~p", [Module]),    
     {ok, Config_1} = Module:janga_terminate(Config),
     Config_1.
 
 start_timer(0) ->
-	lager:info("timer for service  is set to 0");
+	logger:info("timer for service  is set to 0");
 start_timer(Time) ->
     erlang:send_after(Time, self(), {call_invoke}). 
     
 ets_usage(true, Config, Module_config) ->
     Table_Id = create_ets(Config, Module_config),
-    lager:info("owned from ets manager the table : ~p", [Table_Id]),
+    logger:info("owned from ets manager the table : ~p", [Table_Id]),
     [{table_id, Table_Id}|Config];
 ets_usage(false, Config, _Module_config) ->
     Config.
@@ -479,9 +479,9 @@ check_init(Module) ->
     Exports = janga_config:get_value(exports, Module:module_info(), []),
     case janga_config:get_value(janga_init, Exports) of 
         undefined -> true;
-        1 -> lager:warning("there is a init function in the module '~p', but it is false or not available in the config", [Module]),
+        1 -> logger:warning("there is a init function in the module '~p', but it is false or not available in the config", [Module]),
              false;
-        _Any -> lager:warning("the init function has too many arguments"),
+        _Any -> logger:warning("the init function has too many arguments"),
                 false
     end.
 where_is_message_from([Node, _Driver, _Id, Optional, _Payload]) ->    
@@ -506,7 +506,7 @@ is_msgs_allowed_test() ->
     Allowed_msgs_1 = [{all, <<"hc_sr501_driver">>, all}],
     ?assertEqual(true, is_msgs_allowed({<<"horst@raspberrypi">>,<<"hc_sr501_driver">>,<<"0">>}, Allowed_msgs_1)),
     ?assertEqual(false, is_msgs_allowed({<<"horst@raspberrypi">>,<<"cube_driver">>,<<"0">>}, Allowed_msgs_1)),
-    Allowed_msgs_2 = [{local, <<"hc_sr501_driver">>, all}],
+    _Allowed_msgs_2 = [{local, <<"hc_sr501_driver">>, all}],
     ?assertEqual(true, is_msgs_allowed({atom_to_binary(node(),utf8),<<"hc_sr501_driver">>,<<"0">>}, Allowed_msgs_1)).
 
 -endif.

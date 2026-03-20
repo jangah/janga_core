@@ -34,7 +34,7 @@ get_japp_version(Japp) when is_list(Japp) ->
 get_japp_version(Japp) when is_atom(Japp) ->
   case application:get_key(Japp, vsn) of
     {ok, Version} -> Version;
-    undefined -> lager:error("can't read the version of ~p", [Japp]), []
+    undefined -> logger:error("can't read the version of ~p", [Japp]), []
   end.
 
 add_access_log() ->
@@ -133,7 +133,7 @@ get_name() ->
 run_exometer() ->
   Config = get_env(janga_core, exometer, []),
   case lists:keyfind(run, 1, Config) of
-    false -> lager:error("property run is not set in config file!"), 
+    false -> logger:error("property run is not set in config file!"),
              false;
     {run, Flag} -> Flag
   end. 

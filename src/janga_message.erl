@@ -77,7 +77,7 @@ send_after(Pid, Name, Time, Optional, Body) ->
 generate_messages(Loop_count) ->
 	timer:tc(janga_message, generate_messages, [Loop_count, 0]).
 generate_messages(Counter, Counter) ->
-	lager:info("finished generate_messages. ~p were generated.", [Counter]);
+	logger:info("finished generate_messages. ~p were generated.", [Counter]);
 generate_messages(Counter, Value) ->
 	Msg = create_message([], ?MODULE, {test_message, Value}),
 	send_message([node()|nodes()], Msg),
